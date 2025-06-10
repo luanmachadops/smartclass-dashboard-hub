@@ -27,12 +27,16 @@ export function ThemeProvider({
   storageKey = "smartclass-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    }
+    return defaultTheme
+  })
 
   useEffect(() => {
     const root = window.document.documentElement
+    console.log("Applying theme:", theme)
 
     root.classList.remove("light", "dark")
 
@@ -43,15 +47,18 @@ export function ThemeProvider({
         : "light"
 
       root.classList.add(systemTheme)
+      console.log("System theme applied:", systemTheme)
       return
     }
 
     root.classList.add(theme)
+    console.log("Theme class added:", theme)
   }, [theme])
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
+      console.log("Setting theme to:", theme)
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
     },
