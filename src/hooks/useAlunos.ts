@@ -14,6 +14,7 @@ export interface Aluno {
   ativo: boolean
   foto_url: string | null
   created_at: string | null
+  instrumento: string | null
   turma?: {
     nome: string
   }
@@ -35,7 +36,13 @@ export function useAlunos() {
 
       if (error) throw error
 
-      setAlunos(data || [])
+      // Transform the data to match our Aluno interface
+      const transformedData = data?.map(aluno => ({
+        ...aluno,
+        turma: aluno.turmas ? { nome: aluno.turmas.nome } : undefined
+      })) || []
+
+      setAlunos(transformedData)
     } catch (error) {
       console.error('Erro ao buscar alunos:', error)
       toast.error('Erro ao carregar alunos')
@@ -92,7 +99,8 @@ export function useAlunos() {
           responsavel: alunoData.responsavel || null,
           telefone_responsavel: alunoData.telefoneResponsavel || null,
           turma_id: turmaId,
-          foto_url: fotoUrl
+          foto_url: fotoUrl,
+          instrumento: alunoData.instrumento || null
         }])
 
       if (error) throw error

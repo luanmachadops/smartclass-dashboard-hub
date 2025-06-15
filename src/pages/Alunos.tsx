@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, Mail, Phone, Users, GraduationCap, CalendarDays, Plus, MessageCircle } from "lucide-react"
+import { Search, Mail, Phone, Users, GraduationCap, CalendarDays, Plus, MessageCircle, Music } from "lucide-react"
 import { useAlunos } from "@/hooks/useAlunos"
 import { AddAlunoModal } from "@/components/modals/AddAlunoModal"
 import { useState } from "react"
@@ -17,7 +18,8 @@ export default function Alunos() {
   const filteredAlunos = alunos.filter(aluno =>
     aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     aluno.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (aluno.turma?.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (aluno.turma?.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (aluno.instrumento || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const alunosAtivos = alunos.filter(a => a.ativo)
@@ -119,7 +121,7 @@ export default function Alunos() {
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input 
-                  placeholder="Pesquisar alunos por nome, email ou turma..."
+                  placeholder="Pesquisar alunos por nome, email, turma ou instrumento..."
                   className="pl-12 h-12 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm border-white/30 focus:border-blue-400/50 focus:ring-blue-400/30 rounded-xl font-medium"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -188,7 +190,16 @@ export default function Alunos() {
                             </div>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                            {aluno.instrumento && (
+                              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                                <div className="h-8 w-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
+                                  <Music className="h-4 w-4 text-orange-600" />
+                                </div>
+                                <span className="font-medium">{aluno.instrumento}</span>
+                              </div>
+                            )}
+
                             {aluno.email && (
                               <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
                                 <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">

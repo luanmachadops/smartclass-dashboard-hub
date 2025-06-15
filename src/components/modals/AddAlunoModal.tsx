@@ -28,6 +28,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
     turma: "",
     responsavel: "",
     telefoneResponsavel: "",
+    instrumento: "",
     foto: null as File | null
   })
 
@@ -58,6 +59,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
         turma: "",
         responsavel: "",
         telefoneResponsavel: "",
+        instrumento: "",
         foto: null
       })
       setPreviewImage(null)
@@ -65,6 +67,12 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
     
     setLoading(false)
   }
+
+  const instrumentos = [
+    "Piano", "Violão", "Guitarra", "Baixo", "Bateria", "Violino", 
+    "Violoncelo", "Flauta", "Saxofone", "Trompete", "Trombone", 
+    "Clarinete", "Canto", "Ukulele", "Teclado", "Harmônica"
+  ]
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -112,6 +120,22 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
               placeholder="Nome do aluno"
               required
             />
+          </div>
+
+          <div>
+            <Label htmlFor="instrumento">Instrumento</Label>
+            <Select onValueChange={(value) => setFormData({ ...formData, instrumento: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o instrumento" />
+              </SelectTrigger>
+              <SelectContent>
+                {instrumentos.map((instrumento) => (
+                  <SelectItem key={instrumento} value={instrumento}>
+                    {instrumento}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
