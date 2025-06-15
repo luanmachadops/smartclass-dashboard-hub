@@ -12,13 +12,19 @@ export interface Curso {
   updated_at: string;
 }
 
+// AVISO: Tipagem temporária até os types do Supabase serem atualizados com a tabela cursos.
 export function useCursos() {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Usar 'any' até atualização automática dos types Supabase
   const fetchCursos = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("cursos").select("*").order("created_at", { ascending: false });
+    // @ts-expect-error Supabase types ainda não reconhecem a tabela 'cursos'
+    const { data, error } = await (supabase as any)
+      .from("cursos")
+      .select("*")
+      .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar cursos");
       setLoading(false);
@@ -29,7 +35,12 @@ export function useCursos() {
   };
 
   const addCurso = async (curso: { nome: string; descricao?: string }) => {
-    const { data, error } = await supabase.from("cursos").insert([curso]).select().single();
+    // @ts-expect-error Supabase types ainda não reconhecem a tabela 'cursos'
+    const { data, error } = await (supabase as any)
+      .from("cursos")
+      .insert([curso])
+      .select()
+      .single();
     if (error) {
       toast.error("Erro ao adicionar curso");
       return { success: false };
@@ -45,3 +56,4 @@ export function useCursos() {
 
   return { cursos, loading, addCurso, refetch: fetchCursos };
 }
+
