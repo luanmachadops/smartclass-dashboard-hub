@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddProfessorModalProps {
   trigger: React.ReactNode;
@@ -25,6 +26,7 @@ export function AddProfessorModal({ trigger, onProfessorAdded }: AddProfessorMod
   });
   const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [novaEspecialidade, setNovaEspecialidade] = useState("");
+  const { user } = useAuth();
 
   const adicionarEspecialidade = () => {
     if (novaEspecialidade.trim() && !especialidades.includes(novaEspecialidade.trim())) {
@@ -42,16 +44,38 @@ export function AddProfessorModal({ trigger, onProfessorAdded }: AddProfessorMod
     setLoading(true);
 
     try {
+      if (!user?.id) {
+        toast.error('Você precisa estar logado.');
+        setLoading(false);
+        return;
+      }
+
+      // Buscar o school_id do usuário logado (diretor)
+      const { data: perfil, error: perfilError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (perfilError || !perfil?.school_id) {
+        toast.error('Erro ao identificar a escola deste usuário.');
+        setLoading(false);
+        return;
+      }
+
+      const insertProfessor = {
+        nome: formData.nome,
+        email: formData.email,
+        telefone: formData.telefone || null,
+        especialidades: especialidades.length > 0 ? especialidades : null,
+        valor_hora: formData.valor_hora ? parseFloat(formData.valor_hora) : null,
+        ativo: true,
+        school_id: perfil.school_id,
+      };
+
       const { data, error } = await supabase
         .from('professores')
-        .insert([{
-          nome: formData.nome,
-          email: formData.email,
-          telefone: formData.telefone || null,
-          especialidades: especialidades.length > 0 ? especialidades : null,
-          valor_hora: formData.valor_hora ? parseFloat(formData.valor_hora) : null,
-          ativo: true
-        }])
+        .insert([insertProfessor])
         .select()
         .single();
 
