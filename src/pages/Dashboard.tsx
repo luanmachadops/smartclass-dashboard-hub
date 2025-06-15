@@ -1,8 +1,11 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
+import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
+import { AddAlunoModal } from "@/components/modals/AddAlunoModal"
+import { ChamadaModal } from "@/components/modals/ChamadaModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { GraduationCap, Users, UserCheck, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { GraduationCap, Users, UserCheck, CheckCircle, Plus } from "lucide-react"
 
 export default function Dashboard() {
   const stats = [
@@ -37,10 +40,10 @@ export default function Dashboard() {
   ]
 
   const recentClasses = [
-    { name: "Violão Iniciante", time: "14:00", students: 12, attendance: 92 },
-    { name: "Piano Intermediário", time: "15:30", students: 8, attendance: 88 },
-    { name: "Bateria Avançado", time: "16:00", students: 6, attendance: 100 },
-    { name: "Canto Popular", time: "17:00", students: 10, attendance: 80 }
+    { name: "Violão Iniciante", time: "14:00", students: 12, attendance: 92, professores: ["Carlos Silva"] },
+    { name: "Piano Intermediário", time: "15:30", students: 8, attendance: 88, professores: ["Ana Costa"] },
+    { name: "Bateria Avançado", time: "16:00", students: 6, attendance: 100, professores: ["João Santos"] },
+    { name: "Canto Popular", time: "17:00", students: 10, attendance: 80, professores: ["Maria Oliveira"] }
   ]
 
   const topInstruments = [
@@ -88,9 +91,24 @@ export default function Dashboard() {
                         {classItem.time} • {classItem.students} alunos
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-foreground">{classItem.attendance}%</p>
-                      <p className="text-xs text-muted-foreground">Presença</p>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-foreground">{classItem.attendance}%</p>
+                        <p className="text-xs text-muted-foreground">Presença</p>
+                      </div>
+                      <ChamadaModal
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            Chamada
+                          </Button>
+                        }
+                        turma={{
+                          nome: classItem.name,
+                          horario: classItem.time,
+                          dia: "Hoje",
+                          professores: classItem.professores
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -126,14 +144,22 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                <h3 className="font-semibold text-foreground">Nova Turma</h3>
-                <p className="text-sm text-muted-foreground mt-1">Criar uma nova turma</p>
-              </div>
-              <div className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                <h3 className="font-semibold text-foreground">Registrar Aluno</h3>
-                <p className="text-sm text-muted-foreground mt-1">Adicionar novo aluno</p>
-              </div>
+              <AddTurmaModal
+                trigger={
+                  <div className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                    <h3 className="font-semibold text-foreground">Nova Turma</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Criar uma nova turma</p>
+                  </div>
+                }
+              />
+              <AddAlunoModal
+                trigger={
+                  <div className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                    <h3 className="font-semibold text-foreground">Registrar Aluno</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Adicionar novo aluno</p>
+                  </div>
+                }
+              />
               <div className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
                 <h3 className="font-semibold text-foreground">Fazer Chamada</h3>
                 <p className="text-sm text-muted-foreground mt-1">Registrar presença</p>

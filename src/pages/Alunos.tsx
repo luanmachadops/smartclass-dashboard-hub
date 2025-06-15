@@ -1,11 +1,13 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout"
+import { AlunoDetails } from "@/components/details/AlunoDetails"
+import { AddAlunoModal } from "@/components/modals/AddAlunoModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search, Mail, Phone, GraduationCap, TrendingUp, Calendar } from "lucide-react"
+import { Search, Mail, Phone, GraduationCap, TrendingUp, Calendar, Plus, MessageCircle } from "lucide-react"
 
 export default function Alunos() {
   const alunos = [
@@ -61,6 +63,18 @@ export default function Alunos() {
     }
   ]
 
+  const handleWhatsApp = (telefone: string, nome: string) => {
+    const phone = telefone.replace(/\D/g, '')
+    const message = `Olá ${nome}! Como vai seus estudos de música?`
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank')
+  }
+
+  const handleEmail = (email: string, nome: string) => {
+    const subject = `Escola de Música - ${nome}`
+    const body = `Olá ${nome},\n\nEsperamos que esteja bem!\n\nAtenciosamente,\nEscola de Música`
+    window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank')
+  }
+
   const estatisticas = [
     {
       titulo: "Total de Alunos",
@@ -107,18 +121,28 @@ export default function Alunos() {
           ))}
         </div>
 
-        {/* Barra de Pesquisa */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Pesquisar alunos por nome, email ou turma..."
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Barra de Pesquisa e Botão Adicionar */}
+        <div className="flex gap-4">
+          <Card className="flex-1">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Pesquisar alunos por nome, email ou turma..."
+                  className="pl-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+          <AddAlunoModal
+            trigger={
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Aluno
+              </Button>
+            }
+          />
+        </div>
 
         {/* Lista de Alunos */}
         <Card>
@@ -128,71 +152,86 @@ export default function Alunos() {
           <CardContent>
             <div className="space-y-4">
               {alunos.map((aluno) => (
-                <div key={aluno.id} className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src="/placeholder.svg" />
-                        <AvatarFallback>
-                          {aluno.nome.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-foreground">{aluno.nome}</h3>
-                          <Badge variant={aluno.status === "ativo" ? "default" : "secondary"}>
-                            {aluno.status}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-4 w-4" />
-                            <span>{aluno.email}</span>
-                          </div>
+                <AlunoDetails
+                  key={aluno.id}
+                  aluno={aluno}
+                  trigger={
+                    <div className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4 flex-1">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src="/placeholder.svg" />
+                            <AvatarFallback>
+                              {aluno.nome.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
                           
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-4 w-4" />
-                            <span>{aluno.telefone}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <GraduationCap className="h-4 w-4" />
-                            <span>{aluno.turma}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold text-foreground">{aluno.nome}</h3>
+                              <Badge variant={aluno.status === "ativo" ? "default" : "secondary"}>
+                                {aluno.status}
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-3">
+                              <div 
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEmail(aluno.email, aluno.nome)
+                                }}
+                              >
+                                <Mail className="h-4 w-4" />
+                                <span>{aluno.email}</span>
+                              </div>
+                              
+                              <div 
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleWhatsApp(aluno.telefone, aluno.nome)
+                                }}
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                <span>{aluno.telefone}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <GraduationCap className="h-4 w-4" />
+                                <span>{aluno.turma}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-6 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Presença: </span>
+                                <span className={`font-medium ${
+                                  aluno.presenca >= 90 ? 'text-green-600' : 
+                                  aluno.presenca >= 75 ? 'text-yellow-600' : 'text-red-600'
+                                }`}>
+                                  {aluno.presenca}%
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Matrícula: </span>
+                                <span className="font-medium text-foreground">
+                                  {new Date(aluno.dataMatricula).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Presença: </span>
-                            <span className={`font-medium ${
-                              aluno.presenca >= 90 ? 'text-green-600' : 
-                              aluno.presenca >= 75 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>
-                              {aluno.presenca}%
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Matrícula: </span>
-                            <span className="font-medium text-foreground">
-                              {new Date(aluno.dataMatricula).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="outline" size="sm">
+                            Editar
+                          </Button>
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        Ver Detalhes
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Editar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                  }
+                />
               ))}
             </div>
           </CardContent>

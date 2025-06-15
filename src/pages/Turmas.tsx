@@ -1,18 +1,22 @@
 
+import { useState } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
+import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
+import { ChamadaModal } from "@/components/modals/ChamadaModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
-import { Edit, Trash2, Users, Clock, Calendar } from "lucide-react"
+import { Edit, Trash2, Users, Clock, Calendar, Plus, Eye } from "lucide-react"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 export default function Turmas() {
-  const turmas = [
+  const [turmas, setTurmas] = useState([
     {
       id: 1,
       nome: "Violão Iniciante",
-      professor: "Carlos Silva",
+      professores: ["Carlos Silva"],
       alunos: 12,
       horario: "14:00 - 15:00",
       dia: "Segunda-feira",
@@ -22,7 +26,7 @@ export default function Turmas() {
     {
       id: 2,
       nome: "Piano Intermediário", 
-      professor: "Ana Costa",
+      professores: ["Ana Costa"],
       alunos: 8,
       horario: "15:30 - 16:30",
       dia: "Terça-feira",
@@ -32,7 +36,7 @@ export default function Turmas() {
     {
       id: 3,
       nome: "Bateria Avançado",
-      professor: "João Santos",
+      professores: ["João Santos"],
       alunos: 6,
       horario: "16:00 - 17:00", 
       dia: "Quarta-feira",
@@ -42,7 +46,7 @@ export default function Turmas() {
     {
       id: 4,
       nome: "Canto Popular",
-      professor: "Maria Oliveira",
+      professores: ["Maria Oliveira", "Pedro Lima"],
       alunos: 10,
       horario: "17:00 - 18:00",
       dia: "Quinta-feira", 
@@ -52,14 +56,22 @@ export default function Turmas() {
     {
       id: 5,
       nome: "Guitarra Rock",
-      professor: "Pedro Lima",
+      professores: ["Pedro Lima"],
       alunos: 7,
       horario: "18:00 - 19:00",
       dia: "Sexta-feira",
       presenca: 85,
       status: "pausada"
     }
-  ]
+  ])
+
+  const handleDeleteTurma = (id: number) => {
+    setTurmas(turmas.filter(t => t.id !== id))
+  }
+
+  const handleViewDetails = (turma: any) => {
+    console.log("Ver detalhes da turma:", turma)
+  }
 
   return (
     <DashboardLayout title="Gestão de Turmas">
@@ -113,6 +125,18 @@ export default function Turmas() {
           </Card>
         </div>
 
+        {/* Botão Adicionar Turma */}
+        <div className="flex justify-end">
+          <AddTurmaModal
+            trigger={
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Adicionar Turma
+              </Button>
+            }
+          />
+        </div>
+
         {/* Lista de Turmas */}
         <Card>
           <CardHeader>
@@ -121,7 +145,11 @@ export default function Turmas() {
           <CardContent>
             <div className="space-y-4">
               {turmas.map((turma) => (
-                <div key={turma.id} className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                <div 
+                  key={turma.id} 
+                  className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleViewDetails(turma)}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -133,12 +161,16 @@ export default function Turmas() {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {turma.professor.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{turma.professor}</span>
+                          <div className="flex -space-x-1">
+                            {turma.professores.map((professor, index) => (
+                              <Avatar key={index} className="h-6 w-6 border-2 border-background">
+                                <AvatarFallback className="text-xs">
+                                  {professor.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                          </div>
+                          <span>{turma.professores.join(", ")}</span>
                         </div>
                         
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -166,15 +198,45 @@ export default function Turmas() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Eye className="h-4 w-4" />
+                        Ver
+                      </Button>
+                      <ChamadaModal
+                        trigger={
+                          <Button variant="outline" size="sm">
+                            Chamada
+                          </Button>
+                        }
+                        turma={turma}
+                      />
                       <Button variant="outline" size="sm" className="gap-2">
                         <Edit className="h-4 w-4" />
                         Editar
                       </Button>
-                      <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Turma</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir a turma "{turma.nome}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteTurma(turma.id)}>
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import {
   GraduationCap, 
   UserCheck, 
   BarChart3, 
+  DollarSign,
   LogOut,
   Plus,
   Menu,
@@ -23,6 +24,7 @@ const menuItems = [
   { icon: Users, label: "Turmas", href: "/turmas" },
   { icon: GraduationCap, label: "Alunos", href: "/alunos" },
   { icon: UserCheck, label: "Professores", href: "/professores" },
+  { icon: DollarSign, label: "Financeiro", href: "/financeiro" },
   { icon: BarChart3, label: "Relatórios", href: "/relatorios" },
 ]
 
