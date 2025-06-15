@@ -54,7 +54,7 @@ export default function Alunos() {
   if (loading) {
     return (
       <DashboardLayout title="Gestão de Alunos">
-        <div className="space-y-8">
+        <div className="p-6 lg:p-8 space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="backdrop-blur-xl bg-white/40 dark:bg-gray-800/40 border-white/20 shadow-xl">
@@ -88,7 +88,7 @@ export default function Alunos() {
 
   return (
     <DashboardLayout title="Gestão de Alunos">
-      <div className="space-y-8">
+      <div className="p-6 lg:p-8 space-y-8">
         {/* Estatísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {estatisticas.map((stat, index) => (
