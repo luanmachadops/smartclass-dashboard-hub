@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,7 @@ const defaultFormData = {
 };
 
 export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false); // Let dialog control this. Don't close dialog manually elsewhere!
   const [loading, setLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const { createAluno } = useAlunos();
@@ -68,14 +67,12 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
     setLoading(false);
   }, []);
 
-  // Callback chamado quando o Dialog termina o fechamento
-  const handleOpenChange = (value: boolean) => {
-    setOpen(value);
-    if (!value) {
-      // O Dialog desmonta APÓS as animações radix, então reset após breve delay
-      setTimeout(() => {
-        resetStates();
-      }, 200); // padding extra para garantir desmontagem radix
+  // Callback chamado SEMPRE que o Dialog muda (ou usuário fecha, ou cancela, etc)
+  const handleOpenChange = (nextOpen: boolean) => {
+    setInternalOpen(nextOpen);
+    if (!nextOpen) {
+      // IMPORTANTE: só faz reset depois que dialog está "fechado" (ver Radix doc!)
+      setTimeout(resetStates, 300); // um pouco maior que a animação para garantir
     }
   };
 
@@ -87,22 +84,22 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
     if (result.success) {
       setFormSent(true); // esconde o form, mostra confetti
       setShowConfetti(true);
-      // Após mostrar confetti, fecha modal depois de 1.5s
+      // APENAS exibe confetti por 1.5s, depois fecha o modal (deixa dialog controlar)
       setTimeout(() => {
-        setOpen(false); // fecha modal, triggers onOpenChange para limpar tudo
+        setInternalOpen(false); // fecha dialog (overlay/modal somem juntos)
       }, 1500);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={internalOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
       <DialogContent
         className="sm:max-w-[500px] animate-fade-in animate-duration-300"
         style={{
-          animation: open ? 'fade-in 0.4s both' : 'fade-out 0.4s both'
+          animation: internalOpen ? 'fade-in 0.4s both' : 'fade-out 0.4s both'
         }}
       >
         <DialogHeader>
