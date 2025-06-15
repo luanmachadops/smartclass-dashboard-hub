@@ -29,6 +29,11 @@ export default function Turmas() {
     ? Math.round(turmas.reduce((acc, t) => acc + (t.presenca || 0), 0) / turmas.length)
     : 0
 
+  // Calcular taxa de ocupação real
+  const totalVagas = turmas.reduce((acc, t) => acc + (t.vagas_total || 0), 0)
+  const vagasOcupadas = turmas.reduce((acc, t) => acc + (t.alunos || 0), 0)
+  const taxaOcupacao = totalVagas > 0 ? Math.round((vagasOcupadas / totalVagas) * 100) : 0
+
   const handleViewDetails = (turma: any) => {
     console.log('Visualizar detalhes da turma:', turma.nome)
   }
@@ -110,9 +115,9 @@ export default function Turmas() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">85%</div>
+              <div className="text-2xl font-bold">{taxaOcupacao}%</div>
               <p className="text-xs text-muted-foreground">
-                Vagas preenchidas
+                {vagasOcupadas} de {totalVagas} vagas
               </p>
             </CardContent>
           </Card>

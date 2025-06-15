@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Edit, Trash2, Users, Clock, Calendar, MapPin } from "lucide-react"
+import { Edit, Trash2, Users, Calendar, MapPin } from "lucide-react"
 
 interface TurmaCardProps {
   turma: {
@@ -21,6 +21,8 @@ interface TurmaCardProps {
     professores?: string[]
     alunos?: number
     presenca?: number
+    vagas_total?: number
+    vagas_ocupadas?: number
   }
   onDelete: (id: string) => void
   onViewDetails: (turma: any) => void
@@ -39,19 +41,24 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
     return "destructive"
   }
 
+  // Calcular taxa de ocupação real
+  const taxaOcupacao = turma.vagas_total > 0 
+    ? Math.round(((turma.alunos || 0) / turma.vagas_total) * 100)
+    : 0
+
   return (
     <Card 
-      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm"
+      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm w-full"
       onClick={() => onViewDetails(turma)}
     >
       <CardContent className="p-6">
-        {/* Header com nome e status */}
+        {/* Header com nome e ações */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground group-hover:text-blue-600 transition-colors truncate mb-2">
               {turma.nome}
             </h3>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               <Badge variant={turma.ativa ? "default" : "secondary"} className="text-xs">
                 {turma.ativa ? "Ativa" : "Pausada"}
               </Badge>
@@ -62,7 +69,7 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
           </div>
 
           <TooltipProvider>
-            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
@@ -111,61 +118,77 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
           </TooltipProvider>
         </div>
 
-        {/* Informações do curso */}
+        {/* Informações do instrumento */}
         <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span className="font-medium">{turma.instrumento}</span>
+          <MapPin className="h-4 w-4 flex-shrink-0" />
+          <span className="font-medium truncate">{turma.instrumento}</span>
         </div>
 
-        {/* Professor e Alunos */}
-        <div className="space-y-3 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-2">
-              {turma.professores?.slice(0, 2).map((professor, index) => (
-                <Avatar key={index} className="h-8 w-8 border-2 border-background">
-                  <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                    {professor.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-              {(turma.professores?.length || 0) > 2 && (
-                <Avatar className="h-8 w-8 border-2 border-background">
-                  <AvatarFallback className="text-xs bg-gray-400 text-white">
-                    +{(turma.professores?.length || 0) - 2}
-                  </AvatarFallback>
-                </Avatar>
-              )}
+        {/* Professor */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex -space-x-2">
+            {turma.professores?.slice(0, 2).map((professor, index) => (
+              <Avatar key={index} className="h-8 w-8 border-2 border-background">
+                <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                  {professor.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            {(turma.professores?.length || 0) > 2 && (
+              <Avatar className="h-8 w-8 border-2 border-background">
+                <AvatarFallback className="text-xs bg-gray-400 text-white">
+                  +{(turma.professores?.length || 0) - 2}
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">Professor{(turma.professores?.length || 0) > 1 ? 'es' : ''}</p>
+            <p className="text-sm font-medium truncate">
+              {turma.professores?.join(", ") || "Sem professor"}
+            </p>
+          </div>
+        </div>
+        
+        {/* Estatísticas em linha */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+              <Users className="h-4 w-4 text-blue-600" />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">Professor{(turma.professores?.length || 0) > 1 ? 'es' : ''}</p>
-              <p className="text-sm font-medium truncate">
-                {turma.professores?.join(", ") || "Sem professor"}
-              </p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Alunos</p>
+              <p className="text-sm font-bold">{turma.alunos || 0}/{turma.vagas_total || 0}</p>
             </div>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                <Users className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Alunos</p>
-                <p className="text-sm font-bold">{turma.alunos || 0}</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0">
+              <Calendar className="h-4 w-4 text-purple-600" />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
-                <Calendar className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Horário</p>
-                <p className="text-sm font-medium">{turma.dia_semana}</p>
-                <p className="text-xs text-muted-foreground">{turma.horario_inicio} - {turma.horario_fim}</p>
-              </div>
+            <div className="text-right min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">Horário</p>
+              <p className="text-sm font-medium truncate">{turma.dia_semana}</p>
+              <p className="text-xs text-muted-foreground truncate">{turma.horario_inicio} - {turma.horario_fim}</p>
             </div>
           </div>
+        </div>
+
+        {/* Taxa de Ocupação */}
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Taxa de ocupação</span>
+            <Badge 
+              variant={taxaOcupacao >= 80 ? "default" : taxaOcupacao >= 50 ? "secondary" : "outline"}
+              className="text-xs"
+            >
+              {taxaOcupacao}%
+            </Badge>
+          </div>
+          <Progress 
+            value={taxaOcupacao} 
+            className="h-2"
+          />
         </div>
 
         {/* Presença */}

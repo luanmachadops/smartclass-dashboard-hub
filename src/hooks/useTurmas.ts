@@ -62,12 +62,15 @@ export function useTurmas() {
         })
 
         const presencaMedia = totalAulas > 0 ? Math.round(totalPresencas / totalAulas) : 0
+        const numeroAlunos = turma.alunos?.length || 0
 
         return {
           ...turma,
           professores: turma.turma_professores?.map((tp: any) => tp.professores.nome) || [],
-          alunos: turma.alunos?.length || 0,
-          presenca: presencaMedia
+          alunos: numeroAlunos,
+          presenca: presencaMedia,
+          vagas_total: turma.vagas_total || 15,
+          vagas_ocupadas: numeroAlunos
         }
       }) || []
 
