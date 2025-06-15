@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
@@ -347,6 +348,20 @@ export const useChat = () => {
     try {
       console.log('Criando conversa para:', contact)
 
+      // Fetch current user's school_id from their profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError || !profile?.school_id) {
+        toast.error("Não foi possível identificar sua escola para criar a conversa.")
+        console.error('Erro ao buscar school_id do usuário:', profileError)
+        return null
+      }
+      const schoolId = profile.school_id
+
       // Verificar se já existe uma conversa com este contato
       const existingConversation = conversations.find(conv => {
         if (contact.type === 'turma') {
@@ -368,7 +383,7 @@ export const useChat = () => {
           title: contact.type === 'turma' ? contact.name : null,
           is_group_chat: contact.type === 'turma',
           group_chat_class_id: contact.type === 'turma' ? contact.id : null,
-          school_id: user.id // Usando o user.id como school_id temporariamente
+          school_id: schoolId
         })
         .select()
         .single()

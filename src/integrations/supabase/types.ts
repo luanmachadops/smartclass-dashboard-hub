@@ -536,6 +536,7 @@ export type Database = {
           created_at: string | null
           id: string
           nome_completo: string | null
+          school_id: string | null
           telefone: string | null
           tipo_usuario: string | null
           updated_at: string | null
@@ -544,6 +545,7 @@ export type Database = {
           created_at?: string | null
           id: string
           nome_completo?: string | null
+          school_id?: string | null
           telefone?: string | null
           tipo_usuario?: string | null
           updated_at?: string | null
@@ -552,9 +554,39 @@ export type Database = {
           created_at?: string | null
           id?: string
           nome_completo?: string | null
+          school_id?: string | null
           telefone?: string | null
           tipo_usuario?: string | null
           updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schools: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
         }
         Relationships: []
       }
@@ -658,6 +690,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_school_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       user_can_access_conversation: {
         Args: { conversation_id: string }
         Returns: boolean
