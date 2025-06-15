@@ -1,6 +1,8 @@
 
+import { useState } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
+import { TurmaDetailsModal } from "@/components/modals/TurmaDetailsModal"
 import { TurmaCard } from "@/components/TurmaCard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,9 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Turmas() {
   const { turmas, loading, deleteTurma } = useTurmas()
+  const [selectedTurma, setSelectedTurma] = useState<any>(null)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
 
   const handleViewDetails = (turma: any) => {
-    console.log("Ver detalhes da turma:", turma)
+    setSelectedTurma(turma)
+    setDetailsModalOpen(true)
   }
 
   if (loading) {
@@ -91,7 +96,7 @@ export default function Turmas() {
             trigger={
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Adicionar Turma
+                Criar Turma
               </Button>
             }
           />
@@ -101,7 +106,7 @@ export default function Turmas() {
         <div>
           <div className="mb-4">
             <h2 className="text-2xl font-bold text-foreground">Todas as Turmas</h2>
-            <p className="text-muted-foreground">Gerencie suas turmas e acompanhe o desempenho</p>
+            <p className="text-muted-foreground">Clique em uma turma para ver os detalhes e gerenciar aulas</p>
           </div>
           
           {turmas.length === 0 ? (
@@ -135,6 +140,13 @@ export default function Turmas() {
             </div>
           )}
         </div>
+
+        {/* Modal de Detalhes */}
+        <TurmaDetailsModal
+          turma={selectedTurma}
+          open={detailsModalOpen}
+          onOpenChange={setDetailsModalOpen}
+        />
       </div>
     </DashboardLayout>
   )

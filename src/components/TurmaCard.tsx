@@ -6,8 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { ChamadaModal } from "@/components/modals/ChamadaModal"
-import { Edit, Trash2, Users, Clock, Calendar, Eye, UserCheck } from "lucide-react"
+import { Edit, Trash2, Users, Clock, Calendar } from "lucide-react"
 
 interface TurmaCardProps {
   turma: {
@@ -41,7 +40,10 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
   }
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
+    <Card 
+      className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500 cursor-pointer"
+      onClick={() => onViewDetails(turma)}
+    >
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
@@ -63,43 +65,6 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
 
           <TooltipProvider>
             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
-                    onClick={() => onViewDetails(turma)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Ver detalhes</TooltipContent>
-              </Tooltip>
-
-              <ChamadaModal
-                trigger={
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
-                      >
-                        <UserCheck className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Fazer chamada</TooltipContent>
-                  </Tooltip>
-                }
-                turma={{
-                  nome: turma.nome,
-                  horario: `${turma.horario_inicio} - ${turma.horario_fim}`,
-                  dia: turma.dia_semana,
-                  professores: turma.professores || []
-                }}
-              />
-
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 

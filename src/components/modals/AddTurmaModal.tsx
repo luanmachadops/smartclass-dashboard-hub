@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
+import { X, Plus } from "lucide-react"
 import { useTurmas } from "@/hooks/useTurmas"
 import { useProfessores } from "@/hooks/useProfessores"
-import { HorarioAulaForm, HorarioAula } from "@/components/forms/HorarioAulaForm"
 
 interface AddTurmaModalProps {
   trigger: React.ReactNode
@@ -24,19 +23,32 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
   const [formData, setFormData] = useState({
     nome: "",
     instrumento: "",
+    customInstrumento: "",
     nivel: "",
-    professores: [] as string[],
-    maxAlunos: ""
+    professores: [] as string[]
   })
 
-  const [horarios, setHorarios] = useState<HorarioAula[]>([
-    {
-      id: "1",
-      dia: "",
-      horario_inicio: "",
-      horario_fim: ""
+  const [showCustomInstrumento, setShowCustomInstrumento] = useState(false)
+
+  const instrumentosDisponiveis = [
+    "violao",
+    "piano", 
+    "bateria",
+    "guitarra",
+    "canto",
+    "baixo",
+    "outro"
+  ]
+
+  const handleInstrumentoChange = (value: string) => {
+    if (value === "outro") {
+      setShowCustomInstrumento(true)
+      setFormData({ ...formData, instrumento: "" })
+    } else {
+      setShowCustomInstrumento(false)
+      setFormData({ ...formData, instrumento: value, customInstrumento: "" })
     }
-  ])
+  }
 
   const handleAddProfessor = (professor: string) => {
     if (!formData.professores.includes(professor)) {
@@ -57,13 +69,12 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validar se pelo menos um horário está preenchido
-    const horariosValidos = horarios.filter(h => 
-      h.dia && h.horario_inicio && h.horario_fim
-    )
-    
-    if (horariosValidos.length === 0) {
-      alert('Adicione pelo menos um horário válido')
+    const instrumentoFinal = showCustomInstrumento 
+      ? formData.customInstrumento 
+      : formData.instrumento
+
+    if (!instrumentoFinal) {
+      alert('Por favor, selecione ou digite um instrumento')
       return
     }
     
@@ -71,7 +82,13 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
     
     const dadosParaEnviar = {
       ...formData,
-      horarios: horariosValidos
+      instrumento: instrumentoFinal,
+      // Horário temporário para compatibilidade
+      horarios: [{
+        dia: "Segunda-feira",
+        horario_inicio: "08:00",
+        horario_fim: "09:00"
+      }]
     }
     
     console.log('Enviando dados:', dadosParaEnviar)
@@ -83,16 +100,11 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
       setFormData({
         nome: "",
         instrumento: "",
+        customInstrumento: "",
         nivel: "",
-        professores: [],
-        maxAlunos: ""
+        professores: []
       })
-      setHorarios([{
-        id: "1",
-        dia: "",
-        horario_inicio: "",
-        horario_fim: ""
-      }])
+      setShowCustomInstrumento(false)
     }
     
     setLoading(false)
@@ -103,74 +115,65 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Nova Turma</DialogTitle>
+          <DialogTitle>Criar Nova Turma</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="nome">Nome da Turma</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                placeholder="Ex: Violão Iniciante"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="instrumento">Instrumento</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, instrumento: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="violao">Violão</SelectItem>
-                  <SelectItem value="piano">Piano</SelectItem>
-                  <SelectItem value="bateria">Bateria</SelectItem>
-                  <SelectItem value="guitarra">Guitarra</SelectItem>
-                  <SelectItem value="canto">Canto</SelectItem>
-                  <SelectItem value="baixo">Baixo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label htmlFor="nome">Nome da Turma</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+              placeholder="Ex: Violão Iniciante A"
+              required
+            />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="nivel">Nível</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, nivel: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="iniciante">Iniciante</SelectItem>
-                  <SelectItem value="intermediario">Intermediário</SelectItem>
-                  <SelectItem value="avancado">Avançado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="maxAlunos">Máx. Alunos (opcional)</Label>
-              <Input
-                id="maxAlunos"
-                type="number"
-                value={formData.maxAlunos}
-                onChange={(e) => setFormData({ ...formData, maxAlunos: e.target.value })}
-                placeholder="15"
-                min="1"
-              />
-            </div>
-          </div>
-
-          <HorarioAulaForm 
-            horarios={horarios}
-            onChange={setHorarios}
-          />
 
           <div>
-            <Label>Professores</Label>
+            <Label htmlFor="instrumento">Instrumento</Label>
+            <Select onValueChange={handleInstrumentoChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o instrumento" />
+              </SelectTrigger>
+              <SelectContent>
+                {instrumentosDisponiveis.map((instrumento) => (
+                  <SelectItem key={instrumento} value={instrumento}>
+                    {instrumento === "outro" ? "Outro..." : 
+                     instrumento.charAt(0).toUpperCase() + instrumento.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {showCustomInstrumento && (
+              <Input
+                className="mt-2"
+                value={formData.customInstrumento}
+                onChange={(e) => setFormData({ ...formData, customInstrumento: e.target.value })}
+                placeholder="Digite o nome do instrumento"
+                required
+              />
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="nivel">Nível</Label>
+            <Select onValueChange={(value) => setFormData({ ...formData, nivel: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o nível" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="iniciante">Iniciante</SelectItem>
+                <SelectItem value="intermediario">Intermediário</SelectItem>
+                <SelectItem value="avancado">Avançado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Professores (Opcional)</Label>
             <Select onValueChange={handleAddProfessor}>
               <SelectTrigger>
                 <SelectValue placeholder="Adicionar professor" />
