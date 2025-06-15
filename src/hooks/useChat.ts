@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
@@ -342,6 +341,83 @@ export const useChat = () => {
     }
   }
 
+  const createConversation = async (contact: { id: string; name: string; type: 'aluno' | 'professor' | 'turma' }) => {
+    if (!user) return null
+
+    try {
+      // Verificar se já existe uma conversa com este contato
+      const existingConversation = conversations.find(conv => {
+        if (contact.type === 'turma') {
+          return conv.is_group_chat && conv.group_chat_class_id === contact.id
+        } else {
+          return !conv.is_group_chat && conv.recipient?.id === contact.id
+        }
+      })
+
+      if (existingConversation) {
+        return existingConversation
+      }
+
+      // Criar nova conversa
+      const { data: conversation, error } = await supabase
+        .from('conversations')
+        .insert({
+          title: contact.type === 'turma' ? contact.name : null,
+          is_group_chat: contact.type === 'turma',
+          group_chat_class_id: contact.type === 'turma' ? contact.id : null,
+          school_id: user.id // Usando o user.id como school_id temporariamente
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Adicionar participantes
+      const participants = [
+        { conversation_id: conversation.id, profile_id: user.id }
+      ]
+
+      // Se não for turma, adicionar o contato individual
+      if (contact.type !== 'turma') {
+        // Buscar o profile_id do contato baseado no tipo
+        let profileId = null
+        
+        if (contact.type === 'professor') {
+          const { data: professorData } = await supabase
+            .from('professores')
+            .select('user_id')
+            .eq('id', contact.id)
+            .single()
+          
+          profileId = professorData?.user_id
+        } else if (contact.type === 'aluno') {
+          // Para alunos, assumindo que não têm user_id na auth, vamos criar um registro temporário
+          // ou usar o próprio ID do aluno como reference
+          profileId = contact.id
+        }
+
+        if (profileId) {
+          participants.push({ conversation_id: conversation.id, profile_id: profileId })
+        }
+      }
+
+      const { error: participantsError } = await supabase
+        .from('conversation_participants')
+        .insert(participants)
+
+      if (participantsError) throw participantsError
+
+      // Refetch conversations para atualizar a lista
+      await fetchConversations()
+
+      return conversation
+    } catch (error: any) {
+      console.error('Erro ao criar conversa:', error)
+      toast.error('Erro ao criar conversa')
+      return null
+    }
+  }
+
   useEffect(() => {
     fetchConversations()
   }, [user])
@@ -362,6 +438,7 @@ export const useChat = () => {
     createPoll,
     voteOnPoll,
     uploadFile,
+    createConversation,
     refetchConversations: fetchConversations
   }
 }

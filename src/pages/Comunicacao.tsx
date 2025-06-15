@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ConversationList } from "@/components/chat/ConversationList";
@@ -36,7 +35,7 @@ interface MessageItem {
 export default function Comunicacao() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const { conversations, messages, loading, sendMessage } = useChat();
+  const { conversations, messages, loading, sendMessage, createConversation } = useChat();
 
   const handleSendMessage = async (text: string) => {
     if (selectedConversationId) {
@@ -95,6 +94,17 @@ export default function Comunicacao() {
     );
   });
 
+  const handleStartNewConversation = async (contact: { id: string; name: string; type: 'aluno' | 'professor' | 'turma' }) => {
+    try {
+      const newConversation = await createConversation(contact)
+      if (newConversation) {
+        setSelectedConversationId(newConversation.id)
+      }
+    } catch (error) {
+      console.error('Erro ao criar conversa:', error)
+    }
+  }
+
   return (
     <DashboardLayout title="Comunicação">
       <div className="flex h-full">
@@ -105,6 +115,7 @@ export default function Comunicacao() {
           loading={loading}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          onStartNewConversation={handleStartNewConversation}
         />
         
         <ChatInterface
