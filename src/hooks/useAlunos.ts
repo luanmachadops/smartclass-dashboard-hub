@@ -12,6 +12,7 @@ export interface Aluno {
   telefone_responsavel: string | null
   turma_id: string | null
   ativo: boolean
+  created_at: string | null
   turma?: {
     nome: string
   }
