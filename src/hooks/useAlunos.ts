@@ -56,12 +56,14 @@ export function useAlunos() {
 
   // Agora realmente insere o aluno no Supabase e refaz o fetch
   const createAluno = async (formData: any) => {
+    const { nome, email, telefone, turma, instrumento, foto_url } = formData;
     const { data, error } = await supabase.from("alunos").insert([{
-      nome: formData.nome,
-      email: formData.email,
-      telefone: formData.telefone,
-      turma_id: formData.turma ? await getTurmaIdByNome(formData.turma) : null, // opcional: buscar turma pelo nome
-      instrumento: formData.instrumento
+      nome,
+      email,
+      telefone,
+      turma_id: turma ? await getTurmaIdByNome(turma) : null,
+      instrumento,
+      foto_url
     }])
 
     if (error) {
@@ -84,4 +86,3 @@ export function useAlunos() {
 
   return { alunos, loading, createAluno }
 }
-
