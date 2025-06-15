@@ -104,13 +104,15 @@ export function AddAlunoModal({
               <div>
                 <Label htmlFor="foto" className="cursor-pointer">
                   <div className="flex items-center gap-2 px-4 py-2 
-                    bg-white border-2 border-dashed border-gray-300
+                    bg-white border-2 border-blue-400
                     rounded-lg transition-colors
-                    hover:bg-blue-50 hover:border-blue-400
-                    active:bg-blue-100"
+                    hover:bg-blue-50 hover:border-blue-600
+                    active:bg-blue-100
+                    shadow-sm
+                    "
                   >
                     <Upload className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">Escolher Foto</span>
+                    <span className="text-sm font-medium text-blue-700">Escolher Foto</span>
                   </div>
                 </Label>
                 <Input id="foto" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
@@ -193,14 +195,16 @@ export function AddAlunoModal({
             </div>
             {/* Botões */}
             <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-                className="rounded-xl border-slate-300 text-gray-700 hover:bg-gray-100"
-              >
-                Cancelar
-              </Button>
+              <Dialog.Close asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl border-blue-300 text-gray-700 hover:bg-blue-50"
+                  // onClick removido: Dialog.Close gerencia fechar!
+                >
+                  Cancelar
+                </Button>
+              </Dialog.Close>
               <Button
                 type="submit"
                 disabled={loading}
