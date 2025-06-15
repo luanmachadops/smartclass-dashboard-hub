@@ -39,18 +39,43 @@ export function useTurmas() {
           turma_professores (
             professores (nome)
           ),
-          alunos (id)
+          alunos (id),
+          chamadas (
+            id,
+            presencas (presente)
+          )
         `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
 
-      const turmasFormatadas = data?.map(turma => ({
-        ...turma,
-        professores: turma.turma_professores?.map((tp: any) => tp.professores.nome) || [],
-        alunos: turma.alunos?.length || 0,
-        presenca: Math.floor(Math.random() * 20) + 80 // Temporário
-      })) || []
+      const turmasFormatadas = data?.map(turma => {
+        // Calcular presença média real
+        const todasChamadas = turma.chamadas || []
+        let totalPresencas = 0
+        let totalAulas = 0
+
+        todasChamadas.forEach((chamada: any) => {
+          const presencasAula = chamada.presencas || []
+          if (presencasAula.length > 0) {
+            totalAulas++
+            const presentes = presencasAula.filter((p: any) => p.presente).length
+            const totalAlunos = presencasAula.length
+            if (totalAlunos > 0) {
+              totalPresencas += (presentes / totalAlunos) * 100
+            }
+          }
+        })
+
+        const presencaMedia = totalAulas > 0 ? Math.round(totalPresencas / totalAulas) : 0
+
+        return {
+          ...turma,
+          professores: turma.turma_professores?.map((tp: any) => tp.professores.nome) || [],
+          alunos: turma.alunos?.length || 0,
+          presenca: presencaMedia
+        }
+      }) || []
 
       setTurmas(turmasFormatadas)
     } catch (error) {
