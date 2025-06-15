@@ -96,25 +96,6 @@ export function useAlunos() {
     }
   }
 
-  const deleteAluno = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('alunos')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
-      toast.success('Aluno removido com sucesso!')
-      fetchAlunos()
-      return { success: true }
-    } catch (error) {
-      console.error('Erro ao deletar aluno:', error)
-      toast.error('Erro ao remover aluno')
-      return { success: false, error }
-    }
-  }
-
   useEffect(() => {
     fetchAlunos()
   }, [])
@@ -123,7 +104,6 @@ export function useAlunos() {
     alunos,
     loading,
     createAluno,
-    deleteAluno,
     refetch: fetchAlunos
   }
 }
