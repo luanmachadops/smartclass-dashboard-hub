@@ -16,7 +16,9 @@ export type Database = {
           data_nascimento: string | null
           email: string | null
           endereco: string | null
+          foto_url: string | null
           id: string
+          instrumento: string | null
           nome: string
           responsavel: string | null
           telefone: string | null
@@ -30,7 +32,9 @@ export type Database = {
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
+          foto_url?: string | null
           id?: string
+          instrumento?: string | null
           nome: string
           responsavel?: string | null
           telefone?: string | null
@@ -44,7 +48,9 @@ export type Database = {
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
+          foto_url?: string | null
           id?: string
+          instrumento?: string | null
           nome?: string
           responsavel?: string | null
           telefone?: string | null
