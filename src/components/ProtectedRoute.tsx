@@ -21,11 +21,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
 
     const verifyAndFixSchool = async () => {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileFetchError } = await supabase
         .from('profiles')
         .select('school_id')
         .eq('id', user.id)
         .maybeSingle()
+
+      if (profileFetchError) {
+        console.error('Erro ao buscar perfil:', profileFetchError)
+        toast.error('Ocorreu um erro ao verificar seu perfil. Tente recarregar a página.')
+        setIsVerifying(false)
+        return
+      }
 
       if (profile && profile.school_id) {
         setIsVerifying(false)
@@ -54,6 +61,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         existingSchool = newSchool
       }
 
+      if (!existingSchool?.id) {
+        console.error('Falha crítica: ID da escola não encontrado após criação/verificação.')
+        toast.error('Erro crítico na configuração. Contate o suporte.')
+        setIsVerifying(false)
+        return
+      }
+
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({ school_id: existingSchool.id })
@@ -66,8 +80,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         return
       }
 
-      toast.success('Sua conta foi configurada! A página será recarregada.')
-      setTimeout(() => window.location.reload(), 2000)
+      toast.success('Sua conta foi configurada com sucesso!')
+      setIsVerifying(false)
     }
 
     verifyAndFixSchool()
