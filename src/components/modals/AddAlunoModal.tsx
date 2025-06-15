@@ -195,16 +195,16 @@ export function AddAlunoModal({
             </div>
             {/* Botões */}
             <div className="flex justify-end gap-2">
-              <Dialog.Close asChild>
+              <DialogClose asChild>
                 <Button
                   type="button"
                   variant="outline"
                   className="rounded-xl border-blue-300 text-gray-700 hover:bg-blue-50"
-                  // onClick removido: Dialog.Close gerencia fechar!
+                  // onClick removido: DialogClose gerencia fechar!
                 >
                   Cancelar
                 </Button>
-              </Dialog.Close>
+              </DialogClose>
               <Button
                 type="submit"
                 disabled={loading}
