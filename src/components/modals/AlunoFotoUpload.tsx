@@ -58,9 +58,7 @@ export function AlunoFotoUpload({
             </AvatarFallback>
           )}
         </Avatar>
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-primary text-white rounded-full px-2 py-1 text-xs font-medium opacity-90 shadow-md pointer-events-none select-none">
-          {previewUrl ? "Alterar" : "Adicionar"} Foto
-        </div>
+        {/* Texto removido: <div className="absolute ...">{previewUrl ? "Alterar" : "Adicionar"} Foto</div> */}
         <input
           ref={inputRef}
           type="file"
