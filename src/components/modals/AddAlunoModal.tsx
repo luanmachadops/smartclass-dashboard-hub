@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export function AddAlunoModal({
   };
   const instrumentos = ["Piano", "Violão", "Guitarra", "Baixo", "Bateria", "Violino", "Violoncelo", "Flauta", "Saxofone", "Trompete", "Trombone", "Clarinete", "Canto", "Ukulele", "Teclado", "Harmônica"];
   return <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(state) => setOpen(state)}>
         <DialogTrigger asChild>
           {trigger}
         </DialogTrigger>
