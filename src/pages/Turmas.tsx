@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/DashboardLayout"
 import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
 import { TurmaDetailsModal } from "@/components/modals/TurmaDetailsModal"
 import { TurmaCard } from "@/components/TurmaCard"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Users, Calendar, Clock, Plus } from "lucide-react"
 import { useTurmas } from "@/hooks/useTurmas"
@@ -23,10 +23,10 @@ export default function Turmas() {
   if (loading) {
     return (
       <DashboardLayout title="Gestão de Turmas">
-        <div className="space-y-6 p-4 lg:p-6">
+        <div className="space-y-6 p-6 lg:p-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-gray-200 dark:border-gray-700">
+              <Card key={i}>
                 <CardContent className="p-4 lg:p-6">
                   <Skeleton className="h-20 w-full" />
                 </CardContent>
@@ -40,52 +40,52 @@ export default function Turmas() {
 
   return (
     <DashboardLayout title="Gestão de Turmas">
-      <div className="space-y-6 p-4 lg:p-6 max-w-7xl mx-auto">
+      <div className="space-y-6 p-6 lg:p-8 max-w-7xl mx-auto">
         {/* Header com estatísticas rápidas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          <Card className="border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+          <Card className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white hover:shadow-lg transition-shadow">
             <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total de Turmas</p>
-                  <p className="text-2xl font-bold text-foreground">{turmas.length}</p>
+                  <p className="text-sm text-blue-100">Total de Turmas</p>
+                  <p className="text-3xl font-bold">{turmas.length}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Users className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+          <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white hover:shadow-lg transition-shadow">
             <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Turmas Ativas</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-sm text-green-100">Turmas Ativas</p>
+                  <p className="text-3xl font-bold">
                     {turmas.filter(t => t.ativa).length}
                   </p>
                 </div>
+                <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Calendar className="h-6 w-6" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
+          <Card className="bg-gradient-to-br from-purple-500 to-violet-600 text-white hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
             <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-purple-600" />
-                </div>
+               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Média de Presença</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {turmas.length > 0 ? Math.round(turmas.reduce((acc, t) => acc + (t.presenca || 0), 0) / turmas.length) : 0}%
-                  </p>
+                    <p className="text-sm text-purple-100">Média de Presença</p>
+                    <p className="text-3xl font-bold">
+                      {turmas.length > 0 ? Math.round(turmas.reduce((acc, t) => acc + (t.presenca || 0), 0) / turmas.length) : 0}%
+                    </p>
                 </div>
-              </div>
+                 <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                    <Clock className="h-6 w-6" />
+                  </div>
+                </div>
             </CardContent>
           </Card>
         </div>
@@ -110,7 +110,7 @@ export default function Turmas() {
           </div>
           
           {turmas.length === 0 ? (
-            <Card className="border-gray-200 dark:border-gray-700">
+            <Card>
               <CardContent className="text-center py-12">
                 <div className="mx-auto h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-blue-600" />

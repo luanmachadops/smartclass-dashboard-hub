@@ -41,7 +41,7 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
 
   return (
     <Card 
-      className="group hover:shadow-xl transition-all duration-300 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer w-full"
+      className="group hover:shadow-xl transition-all duration-300 hover:ring-2 hover:ring-offset-2 hover:ring-offset-background hover:ring-blue-500 cursor-pointer w-full"
       onClick={() => onViewDetails(turma)}
     >
       <CardContent className="p-4 lg:p-6">
