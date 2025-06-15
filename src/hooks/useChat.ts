@@ -200,7 +200,15 @@ export const useChat = () => {
       if (error) throw error
 
       const newMessage: Message = {
-        ...data,
+        id: data.id,
+        conversation_id: data.conversation_id,
+        sender_profile_id: data.sender_profile_id,
+        text_content: data.text_content,
+        attachment_type: data.attachment_type as AttachmentType | undefined,
+        attachment_file_name: data.attachment_file_name,
+        attachment_file_url: data.attachment_file_url,
+        poll_id: data.poll_id,
+        created_at: data.created_at,
         isSender: true,
         senderName: 'Você',
         senderAvatar: `https://ui-avatars.com/api/?name=Você&background=3b82f6&color=fff`,
@@ -226,24 +234,24 @@ export const useChat = () => {
     }
   }
 
-  const createPoll = async (pollData: PollData) => {
+  const createPoll = async (question: string, options: string[], schoolId: string) => {
     if (!user || !selectedConversationId) return
 
     try {
       const { data: poll, error: pollError } = await supabase
         .from('polls')
         .insert({
-          question: pollData.question,
-          school_id: pollData.school_id
+          question: question,
+          school_id: schoolId
         })
         .select()
         .single()
 
       if (pollError) throw pollError
 
-      const optionsToInsert = pollData.options.map(option => ({
+      const optionsToInsert = options.map(option => ({
         poll_id: poll.id,
-        text: option.text
+        text: option
       }))
 
       const { error: optionsError } = await supabase

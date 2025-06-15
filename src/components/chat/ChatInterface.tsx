@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input'
 import { MessageBubble } from './MessageBubble'
 import { AttachmentMenu } from './AttachmentMenu'
 import { CreatePollModal } from './CreatePollModal'
-import { Conversation, Message, AttachmentType, CreatePollData } from '@/types/chat'
+import { Conversation, Message, AttachmentType } from '@/types/chat'
 
 interface ChatInterfaceProps {
   conversation: Conversation
   messages: Message[]
   onSendMessage: (text: string, attachment?: any) => void
-  onCreatePoll: (pollData: CreatePollData) => void
+  onCreatePoll: (pollData: { question: string; options: string[] }) => void
   onVoteOnPoll: (messageId: string, optionId: string) => void
   onUploadFile: (file: File, type: AttachmentType) => Promise<any>
   onBack?: () => void
@@ -73,9 +73,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setIsAttachmentMenuOpen(false)
   }
 
-  const handleCreatePoll = async (pollData: CreatePollData) => {
+  const handleCreatePoll = async (pollData: { question: string; options: string[] }) => {
     setSending(true)
-    await onCreatePoll({ ...pollData, school_id: conversation.school_id } as any)
+    await onCreatePoll(pollData)
     setSending(false)
     setIsCreatePollModalOpen(false)
   }

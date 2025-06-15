@@ -4,11 +4,13 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { ConversationList } from '@/components/chat/ConversationList'
 import { ChatInterface } from '@/components/chat/ChatInterface'
 import { useChat } from '@/hooks/useChat'
+import { useAuth } from '@/contexts/AuthContext'
 
 const Comunicacao: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isMobileChatView, setIsMobileChatView] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const { user } = useAuth()
 
   const {
     conversations,
@@ -47,6 +49,13 @@ const Comunicacao: React.FC = () => {
     setSelectedConversationId(null)
   }
 
+  const handleCreatePoll = async (pollData: { question: string; options: string[] }) => {
+    if (!user) return
+    // Assumindo que você tem acesso ao schoolId do usuário
+    const schoolId = user.user_metadata?.school_id || 'default-school-id'
+    await createPoll(pollData.question, pollData.options, schoolId)
+  }
+
   const currentConversation = conversations.find(c => c.id === selectedConversationId)
 
   return (
@@ -70,7 +79,7 @@ const Comunicacao: React.FC = () => {
             conversation={currentConversation}
             messages={messages}
             onSendMessage={sendMessage}
-            onCreatePoll={createPoll}
+            onCreatePoll={handleCreatePoll}
             onVoteOnPoll={voteOnPoll}
             onUploadFile={uploadFile}
             onBack={isMobile ? handleBackToList : undefined}
