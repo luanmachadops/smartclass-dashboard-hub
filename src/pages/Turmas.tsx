@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -30,9 +31,7 @@ export default function Turmas() {
   return (
     <DashboardLayout title="Turmas">
       <div className="p-6 lg:p-8 space-y-6">
-        {/* Exemplo de cards de turmas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Renderize cada turma como Card */}
           {turmas.map((turma) => (
             <Card key={turma.id} className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
               <CardHeader>
@@ -41,15 +40,22 @@ export default function Turmas() {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>{turma.dia}</span>
+                  <span>{("dia" in turma && turma.dia) ? turma.dia : "—"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>{turma.horario_inicio} - {turma.horario_fim}</span>
+                  <span>
+                    {("horario_inicio" in turma && turma.horario_inicio) ? turma.horario_inicio : "—"} - 
+                    {("horario_fim" in turma && turma.horario_fim) ? turma.horario_fim : "—"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
-                  <span>{turma.alunos} Alunos</span>
+                  <span>
+                    {("alunos" in turma && turma.alunos !== undefined)
+                      ? turma.alunos
+                      : "0"} Alunos
+                  </span>
                 </div>
               </CardContent>
             </Card>
