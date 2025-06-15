@@ -12,6 +12,7 @@ export interface Aluno {
   telefone_responsavel: string | null
   turma_id: string | null
   ativo: boolean
+  foto_url: string | null
   created_at: string | null
   turma?: {
     nome: string
@@ -45,6 +46,31 @@ export function useAlunos() {
 
   const createAluno = async (alunoData: any) => {
     try {
+      let fotoUrl = null
+      
+      // Upload da foto se fornecida
+      if (alunoData.foto) {
+        const fileExt = alunoData.foto.name.split('.').pop()
+        const fileName = `${Math.random()}.${fileExt}`
+        const filePath = `${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('alunos-fotos')
+          .upload(filePath, alunoData.foto)
+
+        if (uploadError) {
+          console.error('Erro no upload:', uploadError)
+          toast.error('Erro ao fazer upload da foto')
+          return { success: false, error: uploadError }
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('alunos-fotos')
+          .getPublicUrl(filePath)
+        
+        fotoUrl = publicUrlData.publicUrl
+      }
+
       // Buscar ID da turma pelo nome
       let turmaId = null
       if (alunoData.turma) {
@@ -61,11 +87,12 @@ export function useAlunos() {
         .from('alunos')
         .insert([{
           nome: alunoData.nome,
-          email: alunoData.email,
-          telefone: alunoData.telefone,
+          email: alunoData.email || null,
+          telefone: alunoData.telefone || null,
           responsavel: alunoData.responsavel || null,
           telefone_responsavel: alunoData.telefoneResponsavel || null,
-          turma_id: turmaId
+          turma_id: turmaId,
+          foto_url: fotoUrl
         }])
 
       if (error) throw error

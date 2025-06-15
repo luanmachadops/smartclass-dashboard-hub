@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAlunos } from "@/hooks/useAlunos"
 import { useTurmas } from "@/hooks/useTurmas"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Camera, Upload } from "lucide-react"
 
 interface AddAlunoModalProps {
   trigger: React.ReactNode
@@ -17,6 +19,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
   const [loading, setLoading] = useState(false)
   const { createAluno } = useAlunos()
   const { turmas } = useTurmas()
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     nome: "",
@@ -24,8 +27,21 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
     telefone: "",
     turma: "",
     responsavel: "",
-    telefoneResponsavel: ""
+    telefoneResponsavel: "",
+    foto: null as File | null
   })
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setFormData({ ...formData, foto: file })
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setPreviewImage(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,8 +57,10 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
         telefone: "",
         turma: "",
         responsavel: "",
-        telefoneResponsavel: ""
+        telefoneResponsavel: "",
+        foto: null
       })
+      setPreviewImage(null)
     }
     
     setLoading(false)
@@ -58,8 +76,35 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
           <DialogTitle>Registrar Novo Aluno</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Foto do Aluno */}
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative">
+              <Avatar className="h-20 w-20 ring-2 ring-gray-200">
+                <AvatarImage src={previewImage || "/placeholder.svg"} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-semibold">
+                  {formData.nome ? formData.nome.split(' ').map(n => n[0]).join('').substring(0, 2) : <Camera className="h-8 w-8" />}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div>
+              <Label htmlFor="foto" className="cursor-pointer">
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
+                  <Upload className="h-4 w-4" />
+                  <span className="text-sm font-medium">Escolher Foto</span>
+                </div>
+              </Label>
+              <Input
+                id="foto"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </div>
+          </div>
+
           <div>
-            <Label htmlFor="nome">Nome Completo</Label>
+            <Label htmlFor="nome">Nome Completo *</Label>
             <Input
               id="nome"
               value={formData.nome}
@@ -78,7 +123,6 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="email@exemplo.com"
-                required
               />
             </div>
             <div>
@@ -88,7 +132,6 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
                 value={formData.telefone}
                 onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                 placeholder="(11) 99999-9999"
-                required
               />
             </div>
           </div>
@@ -110,7 +153,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
           </div>
 
           <div>
-            <Label htmlFor="responsavel">Responsável (opcional)</Label>
+            <Label htmlFor="responsavel">Responsável</Label>
             <Input
               id="responsavel"
               value={formData.responsavel}
@@ -120,7 +163,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
           </div>
 
           <div>
-            <Label htmlFor="telefoneResponsavel">Telefone do Responsável (opcional)</Label>
+            <Label htmlFor="telefoneResponsavel">Telefone do Responsável</Label>
             <Input
               id="telefoneResponsavel"
               value={formData.telefoneResponsavel}

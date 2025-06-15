@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -162,7 +161,7 @@ export default function Alunos() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-5 flex-1">
                         <Avatar className="h-14 w-14 ring-2 ring-white/50 shadow-lg">
-                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarImage src={aluno.foto_url || "/placeholder.svg"} />
                           <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-semibold text-lg">
                             {aluno.nome.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
