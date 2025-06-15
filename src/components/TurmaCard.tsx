@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Edit, Trash2, Users, Calendar, MapPin } from "lucide-react"
+import { Edit, Trash2, Users, Calendar, MapPin, Clock } from "lucide-react"
 
 interface TurmaCardProps {
   turma: {
@@ -48,17 +48,17 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
 
   return (
     <Card 
-      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm w-full"
+      className="group hover:shadow-lg transition-all duration-300 cursor-pointer w-full max-w-sm mx-auto"
       onClick={() => onViewDetails(turma)}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         {/* Header com nome e ações */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-foreground group-hover:text-blue-600 transition-colors truncate mb-2">
+            <h3 className="text-lg font-bold text-foreground group-hover:text-blue-600 transition-colors truncate">
               {turma.nome}
             </h3>
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge variant={turma.ativa ? "default" : "secondary"} className="text-xs">
                 {turma.ativa ? "Ativa" : "Pausada"}
               </Badge>
@@ -75,7 +75,7 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 hover:bg-orange-100 hover:text-orange-600 transition-colors"
+                    className="h-8 w-8 p-0 hover:bg-orange-100 hover:text-orange-600"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -90,7 +90,7 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
+                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -119,23 +119,23 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
         </div>
 
         {/* Informações do instrumento */}
-        <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4 flex-shrink-0" />
           <span className="font-medium truncate">{turma.instrumento}</span>
         </div>
 
         {/* Professor */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex -space-x-2">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex -space-x-1">
             {turma.professores?.slice(0, 2).map((professor, index) => (
-              <Avatar key={index} className="h-8 w-8 border-2 border-background">
+              <Avatar key={index} className="h-7 w-7 border-2 border-background">
                 <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                   {professor.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
             ))}
             {(turma.professores?.length || 0) > 2 && (
-              <Avatar className="h-8 w-8 border-2 border-background">
+              <Avatar className="h-7 w-7 border-2 border-background">
                 <AvatarFallback className="text-xs bg-gray-400 text-white">
                   +{(turma.professores?.length || 0) - 2}
                 </AvatarFallback>
@@ -143,39 +143,35 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">Professor{(turma.professores?.length || 0) > 1 ? 'es' : ''}</p>
+            <p className="text-xs text-muted-foreground">Professor</p>
             <p className="text-sm font-medium truncate">
               {turma.professores?.join(", ") || "Sem professor"}
             </p>
           </div>
         </div>
         
-        {/* Estatísticas em linha */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+        {/* Informações em grid */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
               <Users className="h-4 w-4 text-blue-600" />
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Alunos</p>
-              <p className="text-sm font-bold">{turma.alunos || 0}/{turma.vagas_total || 0}</p>
-            </div>
+            <p className="text-xs text-muted-foreground">Alunos</p>
+            <p className="text-sm font-bold">{turma.alunos || 0}/{turma.vagas_total || 0}</p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0">
-              <Calendar className="h-4 w-4 text-purple-600" />
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Clock className="h-4 w-4 text-purple-600" />
             </div>
-            <div className="text-right min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">Horário</p>
-              <p className="text-sm font-medium truncate">{turma.dia_semana}</p>
-              <p className="text-xs text-muted-foreground truncate">{turma.horario_inicio} - {turma.horario_fim}</p>
-            </div>
+            <p className="text-xs text-muted-foreground">Horário</p>
+            <p className="text-xs font-medium">{turma.dia_semana}</p>
+            <p className="text-xs text-muted-foreground">{turma.horario_inicio}-{turma.horario_fim}</p>
           </div>
         </div>
 
         {/* Taxa de Ocupação */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2 mb-3">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Taxa de ocupação</span>
             <Badge 

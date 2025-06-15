@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,10 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Mail, Phone, Users, Calendar, Star, Plus } from "lucide-react"
 import { useProfessores } from "@/hooks/useProfessores"
+import { AddProfessorModal } from "@/components/modals/AddProfessorModal"
 import { useState } from "react"
 
 export default function Professores() {
-  const { professores, loading } = useProfessores()
+  const { professores, loading, refetch } = useProfessores()
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredProfessores = professores.filter(professor =>
@@ -20,7 +22,9 @@ export default function Professores() {
   )
 
   const professoresAtivos = professores.filter(p => p.ativo)
-  const avaliacaoMedia = 4.7 // Temporário até implementar avaliações reais
+  const avaliacaoMediaGeral = professores.length > 0 
+    ? professores.reduce((acc, p) => acc + (p.avaliacao_media || 0), 0) / professores.length
+    : 0
 
   const estatisticas = [
     {
@@ -39,7 +43,7 @@ export default function Professores() {
     },
     {
       titulo: "Avaliação Média",
-      valor: `${avaliacaoMedia.toFixed(1)}⭐`,
+      valor: `${avaliacaoMediaGeral.toFixed(1)}⭐`,
       icon: Star,
       cor: "text-yellow-600", 
       fundo: "bg-yellow-100 dark:bg-yellow-900/50"
@@ -87,7 +91,7 @@ export default function Professores() {
         {/* Estatísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {estatisticas.map((stat, index) => (
-            <Card key={index} className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+            <Card key={index} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={`h-10 w-10 rounded-full ${stat.fundo} flex items-center justify-center`}>
@@ -104,28 +108,30 @@ export default function Professores() {
         </div>
 
         {/* Barra de Pesquisa e Botão Adicionar */}
-        <div className="flex gap-4">
-          <Card className="flex-1 hover:shadow-xl hover:scale-105 transition-transform duration-300">
-            <CardContent className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Pesquisar professores por nome, especialidade ou email..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Professor
-          </Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Pesquisar professores..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <AddProfessorModal
+            trigger={
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Professor
+              </Button>
+            }
+            onProfessorAdded={refetch}
+          />
         </div>
 
         {/* Lista de Professores */}
-        <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+        <Card>
           <CardHeader>
             <CardTitle>Todos os Professores ({filteredProfessores.length})</CardTitle>
           </CardHeader>
@@ -141,7 +147,7 @@ export default function Professores() {
                 {filteredProfessores.map((professor) => (
                   <div
                     key={professor.id}
-                    className="p-6 border border-border rounded-lg hover:shadow-xl hover:scale-105 transition-transform duration-300 hover:bg-muted/50 transition-colors"
+                    className="p-6 border border-border rounded-lg hover:shadow-lg transition-shadow hover:bg-muted/50"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">
@@ -160,7 +166,14 @@ export default function Professores() {
                             </Badge>
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                              <span className="text-sm font-medium text-foreground">{avaliacaoMedia}</span>
+                              <span className="text-sm font-medium text-foreground">
+                                {professor.avaliacao_media?.toFixed(1) || "0.0"}
+                              </span>
+                              {professor.total_aulas && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({professor.total_aulas} aulas)
+                                </span>
+                              )}
                             </div>
                           </div>
                           
@@ -196,11 +209,22 @@ export default function Professores() {
                             )}
                           </div>
 
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Status: </span>
-                            <span className={`font-medium ${professor.ativo ? 'text-green-600' : 'text-red-600'}`}>
-                              {professor.ativo ? 'Ativo' : 'Inativo'}
-                            </span>
+                          <div className="flex items-center gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Status: </span>
+                              <span className={`font-medium ${professor.ativo ? 'text-green-600' : 'text-red-600'}`}>
+                                {professor.ativo ? 'Ativo' : 'Inativo'}
+                              </span>
+                            </div>
+                            
+                            {professor.presenca_media !== undefined && (
+                              <div>
+                                <span className="text-muted-foreground">Presença média: </span>
+                                <span className="font-medium text-foreground">
+                                  {professor.presenca_media}%
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
