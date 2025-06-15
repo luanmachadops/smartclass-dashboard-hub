@@ -20,6 +20,12 @@ export interface Turma {
   presenca?: number
 }
 
+export interface HorarioAula {
+  dia: string
+  horario_inicio: string
+  horario_fim: string
+}
+
 export function useTurmas() {
   const [turmas, setTurmas] = useState<Turma[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,21 +63,31 @@ export function useTurmas() {
 
   const createTurma = async (turmaData: any) => {
     try {
+      console.log('Dados da turma para criar:', turmaData)
+      
+      // Para o primeiro horário, vamos usar o formato simples atual
+      const primeiroHorario = turmaData.horarios[0]
+      
       const { data, error } = await supabase
         .from('turmas')
         .insert([{
           nome: turmaData.nome,
           instrumento: turmaData.instrumento,
           nivel: turmaData.nivel,
-          dia_semana: turmaData.dia,
-          horario_inicio: turmaData.horario.split(' - ')[0],
-          horario_fim: turmaData.horario.split(' - ')[1],
-          vagas_total: parseInt(turmaData.maxAlunos)
+          dia_semana: primeiroHorario.dia,
+          horario_inicio: primeiroHorario.horario_inicio,
+          horario_fim: primeiroHorario.horario_fim,
+          vagas_total: turmaData.maxAlunos ? parseInt(turmaData.maxAlunos) : 10
         }])
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro ao inserir turma:', error)
+        throw error
+      }
+
+      console.log('Turma criada:', data)
 
       // Associar professores à turma
       if (turmaData.professores?.length > 0) {

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
 import { useTurmas } from "@/hooks/useTurmas"
 import { useProfessores } from "@/hooks/useProfessores"
+import { HorarioAulaForm, HorarioAula } from "@/components/forms/HorarioAulaForm"
 
 interface AddTurmaModalProps {
   trigger: React.ReactNode
@@ -24,11 +25,18 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
     nome: "",
     instrumento: "",
     nivel: "",
-    horario: "",
-    dia: "",
     professores: [] as string[],
     maxAlunos: ""
   })
+
+  const [horarios, setHorarios] = useState<HorarioAula[]>([
+    {
+      id: "1",
+      dia: "",
+      horario_inicio: "",
+      horario_fim: ""
+    }
+  ])
 
   const handleAddProfessor = (professor: string) => {
     if (!formData.professores.includes(professor)) {
@@ -48,9 +56,27 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validar se pelo menos um horário está preenchido
+    const horariosValidos = horarios.filter(h => 
+      h.dia && h.horario_inicio && h.horario_fim
+    )
+    
+    if (horariosValidos.length === 0) {
+      alert('Adicione pelo menos um horário válido')
+      return
+    }
+    
     setLoading(true)
     
-    const result = await createTurma(formData)
+    const dadosParaEnviar = {
+      ...formData,
+      horarios: horariosValidos
+    }
+    
+    console.log('Enviando dados:', dadosParaEnviar)
+    
+    const result = await createTurma(dadosParaEnviar)
     
     if (result.success) {
       setOpen(false)
@@ -58,11 +84,15 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
         nome: "",
         instrumento: "",
         nivel: "",
-        horario: "",
-        dia: "",
         professores: [],
         maxAlunos: ""
       })
+      setHorarios([{
+        id: "1",
+        dia: "",
+        horario_inicio: "",
+        horario_fim: ""
+      }])
     }
     
     setLoading(false)
@@ -73,11 +103,11 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Adicionar Nova Turma</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="nome">Nome da Turma</Label>
@@ -122,46 +152,22 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="maxAlunos">Máx. Alunos</Label>
+              <Label htmlFor="maxAlunos">Máx. Alunos (opcional)</Label>
               <Input
                 id="maxAlunos"
                 type="number"
                 value={formData.maxAlunos}
                 onChange={(e) => setFormData({ ...formData, maxAlunos: e.target.value })}
                 placeholder="15"
-                required
+                min="1"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dia">Dia da Semana</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, dia: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Segunda-feira">Segunda-feira</SelectItem>
-                  <SelectItem value="Terça-feira">Terça-feira</SelectItem>
-                  <SelectItem value="Quarta-feira">Quarta-feira</SelectItem>
-                  <SelectItem value="Quinta-feira">Quinta-feira</SelectItem>
-                  <SelectItem value="Sexta-feira">Sexta-feira</SelectItem>
-                  <SelectItem value="Sábado">Sábado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="horario">Horário</Label>
-              <Input
-                id="horario"
-                value={formData.horario}
-                onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
-                placeholder="14:00 - 15:00"
-                required
-              />
-            </div>
-          </div>
+          <HorarioAulaForm 
+            horarios={horarios}
+            onChange={setHorarios}
+          />
 
           <div>
             <Label>Professores</Label>
