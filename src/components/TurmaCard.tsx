@@ -41,36 +41,36 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
 
   return (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500 cursor-pointer"
+      className="group hover:shadow-xl transition-all duration-300 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer w-full"
       onClick={() => onViewDetails(turma)}
     >
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-xl font-bold text-foreground group-hover:text-blue-600 transition-colors">
+      <CardContent className="p-4 lg:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+              <h3 className="text-xl font-bold text-foreground group-hover:text-blue-600 transition-colors truncate">
                 {turma.nome}
               </h3>
-              <Badge variant={turma.ativa ? "default" : "secondary"} className="text-xs">
+              <Badge variant={turma.ativa ? "default" : "secondary"} className="text-xs w-fit">
                 {turma.ativa ? "ativa" : "pausada"}
               </Badge>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground mb-3">
               <span className="font-medium">{turma.instrumento}</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span>{turma.nivel}</span>
             </div>
           </div>
 
           <TooltipProvider>
-            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 hover:bg-orange-100 hover:text-orange-600"
+                    className="h-8 w-8 p-0 hover:bg-orange-100 hover:text-orange-600 transition-colors"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -85,7 +85,7 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
+                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -113,7 +113,7 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
           </TooltipProvider>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
               {turma.professores?.slice(0, 2).map((professor, index) => (
@@ -131,16 +131,16 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
                 </Avatar>
               )}
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Professor{(turma.professores?.length || 0) > 1 ? 'es' : ''}</p>
-              <p className="text-sm font-medium truncate max-w-32">
+              <p className="text-sm font-medium truncate">
                 {turma.professores?.join(", ") || "Sem professor"}
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
               <Users className="h-4 w-4 text-blue-600" />
             </div>
             <div>
@@ -149,13 +149,13 @@ export function TurmaCard({ turma, onDelete, onViewDetails }: TurmaCardProps) {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
+            <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0">
               <Calendar className="h-4 w-4 text-purple-600" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Horário</p>
-              <p className="text-sm font-medium">{turma.dia_semana}</p>
+              <p className="text-sm font-medium truncate">{turma.dia_semana}</p>
               <p className="text-xs text-muted-foreground">{turma.horario_inicio} - {turma.horario_fim}</p>
             </div>
           </div>

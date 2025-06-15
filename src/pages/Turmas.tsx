@@ -23,11 +23,11 @@ export default function Turmas() {
   if (loading) {
     return (
       <DashboardLayout title="Gestão de Turmas">
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="space-y-6 p-4 lg:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
+              <Card key={i} className="border-gray-200 dark:border-gray-700">
+                <CardContent className="p-4 lg:p-6">
                   <Skeleton className="h-20 w-full" />
                 </CardContent>
               </Card>
@@ -40,11 +40,11 @@ export default function Turmas() {
 
   return (
     <DashboardLayout title="Gestão de Turmas">
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header com estatísticas rápidas */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          <Card className="border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
                   <Users className="h-5 w-5 text-blue-600" />
@@ -57,8 +57,8 @@ export default function Turmas() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
                   <Calendar className="h-5 w-5 text-green-600" />
@@ -73,8 +73,8 @@ export default function Turmas() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
                   <Clock className="h-5 w-5 text-purple-600" />
@@ -91,10 +91,10 @@ export default function Turmas() {
         </div>
 
         {/* Botão Adicionar Turma */}
-        <div className="flex justify-end">
+        <div className="flex justify-center sm:justify-end">
           <AddTurmaModal
             trigger={
-              <Button className="gap-2">
+              <Button className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Criar Turma
               </Button>
@@ -104,13 +104,13 @@ export default function Turmas() {
 
         {/* Lista de Turmas */}
         <div>
-          <div className="mb-4">
+          <div className="mb-6 text-center sm:text-left">
             <h2 className="text-2xl font-bold text-foreground">Todas as Turmas</h2>
             <p className="text-muted-foreground">Clique em uma turma para ver os detalhes e gerenciar aulas</p>
           </div>
           
           {turmas.length === 0 ? (
-            <Card>
+            <Card className="border-gray-200 dark:border-gray-700">
               <CardContent className="text-center py-12">
                 <div className="mx-auto h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-blue-600" />
@@ -128,7 +128,7 @@ export default function Turmas() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4 lg:space-y-6">
               {turmas.map((turma) => (
                 <TurmaCard
                   key={turma.id}
