@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -112,8 +113,13 @@ export function useProfessores() {
   }
 
   useEffect(() => {
-    fetchProfessores()
-  }, [])
+    if (user) {
+      fetchProfessores()
+    } else {
+      setLoading(false)
+      setProfessores([])
+    }
+  }, [user])
 
   return { professores, loading, addProfessor, refetch: fetchProfessores }
 }

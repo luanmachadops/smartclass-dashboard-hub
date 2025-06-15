@@ -92,8 +92,13 @@ export function useCursos() {
   };
 
   useEffect(() => {
-    fetchCursos();
-  }, []);
+    if (user) {
+      fetchCursos();
+    } else {
+      setLoading(false);
+      setCursos([]);
+    }
+  }, [user]);
 
   return { cursos, loading, addCurso, refetch: fetchCursos };
 }

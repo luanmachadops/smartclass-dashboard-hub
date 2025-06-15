@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -12,44 +11,47 @@ export function useAlunos() {
 
   const fetchAlunos = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from("alunos")
-      .select(
-        `
-          *,
-          turmas (
-            nome
-          )
-        `
-      )
+    try {
+      const { data, error } = await supabase
+        .from("alunos")
+        .select(
+          `
+            *,
+            turmas (
+              nome
+            )
+          `
+        )
 
-    if (error) {
+      if (error) {
+        throw error
+      }
+
+      const alunosCompletos: Aluno[] = (data || []).map((aluno: any) => ({
+        id: aluno.id,
+        nome: aluno.nome,
+        email: aluno.email,
+        telefone: aluno.telefone,
+        endereco: aluno.endereco,
+        data_nascimento: aluno.data_nascimento,
+        responsavel: aluno.responsavel,
+        telefone_responsavel: aluno.telefone_responsavel,
+        ativo: aluno.ativo,
+        turma_id: aluno.turma_id,
+        created_at: aluno.created_at,
+        updated_at: aluno.updated_at,
+        turma: aluno.turmas ? { nome: aluno.turmas.nome } : undefined,
+        foto_url: aluno.foto_url ?? "",
+        instrumento: aluno.instrumento ?? "",
+      }))
+
+      setAlunos(alunosCompletos)
+    } catch (error) {
+      console.error("Erro ao carregar alunos:", error)
       toast.error("Erro ao carregar alunos")
+    } finally {
       setLoading(false)
-      return
     }
-
-    // Garantir que sempre tenha foto_url e instrumento para cada aluno
-    const alunosCompletos: Aluno[] = (data || []).map((aluno: any) => ({
-      id: aluno.id,
-      nome: aluno.nome,
-      email: aluno.email,
-      telefone: aluno.telefone,
-      endereco: aluno.endereco,
-      data_nascimento: aluno.data_nascimento,
-      responsavel: aluno.responsavel,
-      telefone_responsavel: aluno.telefone_responsavel,
-      ativo: aluno.ativo,
-      turma_id: aluno.turma_id,
-      created_at: aluno.created_at,
-      updated_at: aluno.updated_at,
-      turma: aluno.turmas ? { nome: aluno.turmas.nome } : undefined,
-      foto_url: aluno.foto_url ?? "",
-      instrumento: aluno.instrumento ?? "",
-    }))
-
-    setAlunos(alunosCompletos)
-    setLoading(false)
   }
 
   // Insere o aluno via Edge Function para garantir segurança
@@ -122,5 +124,14 @@ export function useAlunos() {
     return data?.id ?? null
   }
 
-  return { alunos, loading, createAluno }
+  useEffect(() => {
+    if (user) {
+      fetchAlunos()
+    } else {
+      setLoading(false)
+      setAlunos([])
+    }
+  }, [user])
+
+  return { alunos, loading, createAluno, refetch: fetchAlunos }
 }
