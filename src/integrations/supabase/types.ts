@@ -9,7 +9,359 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alunos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          responsavel: string | null
+          telefone: string | null
+          telefone_responsavel: string | null
+          turma_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          responsavel?: string | null
+          telefone?: string | null
+          telefone_responsavel?: string | null
+          turma_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          responsavel?: string | null
+          telefone?: string | null
+          telefone_responsavel?: string | null
+          turma_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alunos_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chamadas: {
+        Row: {
+          created_at: string | null
+          data_aula: string
+          id: string
+          observacoes: string | null
+          professor_id: string
+          turma_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_aula: string
+          id?: string
+          observacoes?: string | null
+          professor_id: string
+          turma_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_aula?: string
+          id?: string
+          observacoes?: string | null
+          professor_id?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamadas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chamadas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro: {
+        Row: {
+          aluno_id: string | null
+          categoria: string
+          created_at: string | null
+          data_pagamento: string | null
+          data_vencimento: string
+          descricao: string
+          id: string
+          metodo_pagamento: string | null
+          observacoes: string | null
+          professor_id: string | null
+          status: string | null
+          tipo: string
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          aluno_id?: string | null
+          categoria: string
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento: string
+          descricao: string
+          id?: string
+          metodo_pagamento?: string | null
+          observacoes?: string | null
+          professor_id?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          aluno_id?: string | null
+          categoria?: string
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string
+          descricao?: string
+          id?: string
+          metodo_pagamento?: string | null
+          observacoes?: string | null
+          professor_id?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presencas: {
+        Row: {
+          aluno_id: string
+          chamada_id: string
+          created_at: string | null
+          id: string
+          observacoes: string | null
+          presente: boolean
+        }
+        Insert: {
+          aluno_id: string
+          chamada_id: string
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          presente: boolean
+        }
+        Update: {
+          aluno_id?: string
+          chamada_id?: string
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          presente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presencas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presencas_chamada_id_fkey"
+            columns: ["chamada_id"]
+            isOneToOne: false
+            referencedRelation: "chamadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professores: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          email: string
+          especialidades: string[] | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+          user_id: string | null
+          valor_hora: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          email: string
+          especialidades?: string[] | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          valor_hora?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          email?: string
+          especialidades?: string[] | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          valor_hora?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome_completo: string | null
+          telefone: string | null
+          tipo_usuario: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          nome_completo?: string | null
+          telefone?: string | null
+          tipo_usuario?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome_completo?: string | null
+          telefone?: string | null
+          tipo_usuario?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      turma_professores: {
+        Row: {
+          created_at: string | null
+          id: string
+          professor_id: string
+          turma_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          professor_id: string
+          turma_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          professor_id?: string
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turma_professores_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turma_professores_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turmas: {
+        Row: {
+          ativa: boolean | null
+          created_at: string | null
+          dia_semana: string
+          horario_fim: string
+          horario_inicio: string
+          id: string
+          instrumento: string
+          nivel: string
+          nome: string
+          updated_at: string | null
+          vagas_ocupadas: number | null
+          vagas_total: number | null
+          valor_mensal: number | null
+        }
+        Insert: {
+          ativa?: boolean | null
+          created_at?: string | null
+          dia_semana: string
+          horario_fim: string
+          horario_inicio: string
+          id?: string
+          instrumento: string
+          nivel: string
+          nome: string
+          updated_at?: string | null
+          vagas_ocupadas?: number | null
+          vagas_total?: number | null
+          valor_mensal?: number | null
+        }
+        Update: {
+          ativa?: boolean | null
+          created_at?: string | null
+          dia_semana?: string
+          horario_fim?: string
+          horario_inicio?: string
+          id?: string
+          instrumento?: string
+          nivel?: string
+          nome?: string
+          updated_at?: string | null
+          vagas_ocupadas?: number | null
+          vagas_total?: number | null
+          valor_mensal?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

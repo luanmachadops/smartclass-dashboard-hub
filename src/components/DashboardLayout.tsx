@@ -1,145 +1,144 @@
 
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { 
-  Home, 
-  Users, 
-  GraduationCap, 
-  UserCheck, 
-  BarChart3, 
-  DollarSign,
-  LogOut,
-  Plus,
-  Menu,
-  X
-} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Logo } from "@/components/Logo"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { cn } from "@/lib/utils"
-
-const menuItems = [
-  { icon: Home, label: "Resumo", href: "/dashboard" },
-  { icon: Users, label: "Turmas", href: "/turmas" },
-  { icon: GraduationCap, label: "Alunos", href: "/alunos" },
-  { icon: UserCheck, label: "Professores", href: "/professores" },
-  { icon: DollarSign, label: "Financeiro", href: "/financeiro" },
-  { icon: BarChart3, label: "Relatórios", href: "/relatorios" },
-]
+import { useAuth } from "@/contexts/AuthContext"
+import {
+  Menu,
+  Home,
+  Users,
+  GraduationCap,
+  UserCheck,
+  BarChart3,
+  DollarSign,
+  LogOut
+} from "lucide-react"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  title: string
+  title?: string
 }
+
+const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Turmas", href: "/turmas", icon: Users },
+  { name: "Alunos", href: "/alunos", icon: GraduationCap },
+  { name: "Professores", href: "/professores", icon: UserCheck },
+  { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign },
+]
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const { user, signOut } = useAuth()
 
-  return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out lg:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
-          <Logo />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+  const isActive = (href: string) => location.pathname === href
 
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
+  const handleLogout = async () => {
+    await signOut()
+  }
 
-        <div className="px-4 py-4 border-t border-sidebar-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback>LB</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-sidebar-foreground truncate">
-                  Luan de Barros
-                </p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">
-                  luandebarros@email.com
-                </p>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/login" title="Sair">
-                <LogOut className="h-5 w-5 text-destructive" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Button className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              <span className="hidden sm:inline">Adicionar Turma</span>
-            </Button>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
+  const sidebarContent = (
+    <div className="flex h-full flex-col">
+      {/* Logo */}
+      <div className="flex h-16 shrink-0 items-center gap-3 px-6 border-b">
+        <Logo size="sm" />
+        <span className="text-lg font-semibold">SmartClass</span>
       </div>
 
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 px-4 py-4">
+        {navigation.map((item) => (
+          <Link
+            key={item.name}
+            to={item.href}
+            onClick={() => setSidebarOpen(false)}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              isActive(item.href)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.name}
+          </Link>
+        ))}
+      </nav>
+
+      {/* User info and logout */}
+      <div className="border-t p-4">
+        <div className="mb-3 text-sm text-muted-foreground">
+          Logado como: {user?.email}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleLogout}
+          className="w-full justify-start gap-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-card">
+          {sidebarContent}
+        </div>
+      </div>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          <div className="bg-card h-full">
+            {sidebarContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Content */}
+      <div className="lg:pl-72">
+        {/* Top Bar */}
+        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-background px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="lg:hidden">
+                <Menu className="h-4 w-4" />
+                <span className="sr-only">Abrir sidebar</span>
+              </Button>
+            </SheetTrigger>
+          </Sheet>
+
+          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+            <div className="flex flex-1 items-center">
+              {title && (
+                <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+              )}
+            </div>
+            <div className="flex items-center gap-x-4 lg:gap-x-6">
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+
+        {/* Page Content */}
+        <main className="py-6">
+          <div className="px-4 sm:px-6 lg:px-8">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
