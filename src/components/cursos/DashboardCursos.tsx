@@ -35,7 +35,7 @@ export function DashboardCursos() {
 
   // Alunos agrupados por curso
   const alunosPorCurso = useMemo(() => {
-    return cursosFiltrados.map((curso, idx) => {
+    return cursosFiltrados.map((curso) => {
       const turmasCurso = turmas.filter(t => t.curso_id === curso.id).map(t => t.id);
       const alunosCurso = alunos.filter(a => turmasCurso.includes(a.turma_id));
       return { nome: curso.nome, alunos: alunosCurso.length };
@@ -44,7 +44,7 @@ export function DashboardCursos() {
 
   // Ranking de frequência média por curso
   const rankingFrequencia = useMemo(() => {
-    return cursosFiltrados.map((curso, idx) => {
+    return cursosFiltrados.map((curso) => {
       const turmasCurso = turmas.filter(t => t.curso_id === curso.id);
       // Média de presença: agarrar campo presenca de cada turma, já vem calculado em useTurmas
       const freqMedia =

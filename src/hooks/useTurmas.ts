@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
@@ -18,6 +17,7 @@ export interface Turma {
   professores?: string[]
   alunos?: number
   presenca?: number
+  curso_id?: string
 }
 
 export function useTurmas() {

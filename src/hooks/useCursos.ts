@@ -24,7 +24,7 @@ export function useCursos() {
       setLoading(false);
       return;
     }
-    setCursos(data || []);
+    setCursos((data || []) as Curso[]);
     setLoading(false);
   };
 
