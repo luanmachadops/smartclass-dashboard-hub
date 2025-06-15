@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -97,7 +96,7 @@ export function AddAlunoModal({
               </div>
               <div>
                 <Label htmlFor="foto" className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-300 transition-colors">
                     <Upload className="h-4 w-4" />
                     <span className="text-sm font-medium">Escolher Foto</span>
                   </div>
