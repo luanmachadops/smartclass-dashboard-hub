@@ -7,6 +7,7 @@ import Index from "@/pages/Index"
 import Auth from "@/pages/Auth"
 import Dashboard from "@/pages/Dashboard"
 import Turmas from "@/pages/Turmas"
+import Cursos from "@/pages/Cursos"
 import Alunos from "@/pages/Alunos"
 import Professores from "@/pages/Professores"
 import Relatorios from "@/pages/Relatorios"
@@ -34,6 +35,11 @@ function App() {
             <Route path="/turmas" element={
               <ProtectedRoute>
                 <Turmas />
+              </ProtectedRoute>
+            } />
+            <Route path="/cursos" element={
+              <ProtectedRoute>
+                <Cursos />
               </ProtectedRoute>
             } />
             <Route path="/alunos" element={
