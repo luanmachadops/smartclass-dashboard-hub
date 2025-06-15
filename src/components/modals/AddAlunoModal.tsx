@@ -9,6 +9,7 @@ import { useAlunos } from "@/hooks/useAlunos";
 import { useTurmas } from "@/hooks/useTurmas";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AlunoFotoUpload } from "./AlunoFotoUpload";
 
 interface AddAlunoModalProps {
   trigger: React.ReactNode;
@@ -25,13 +26,16 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
   const [telefone, setTelefone] = useState("");
   const [turma, setTurma] = useState("");
   const [instrumento, setInstrumento] = useState("");
+  // Novo estado: foto
   const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFotoFile(e.target.files[0]);
-    }
+  // Remove handleFileChange antigo
+  const handleFotoChange = (file: File | null, previewUrl: string | null) => {
+    setFotoFile(file);
+    setFotoPreviewUrl(previewUrl);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,6 +89,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
       setTurma("");
       setInstrumento("");
       setFotoFile(null);
+      setFotoPreviewUrl(null);
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }, 200);
@@ -100,6 +105,14 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
           <DialogTitle>Novo Aluno</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          {/* Circulo/foto é o primeiro campo */}
+          <AlunoFotoUpload
+            value={fotoFile}
+            previewUrl={fotoPreviewUrl}
+            nome={nome}
+            onChange={handleFotoChange}
+            disabled={loading}
+          />
           <div>
             <Label htmlFor="nome">Nome *</Label>
             <Input
@@ -151,19 +164,8 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label htmlFor="foto">Foto</Label>
-            <Input
-              ref={fileInputRef}
-              id="foto"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-            {fotoFile && (
-              <span className="text-xs text-gray-500 mt-1">{fotoFile.name}</span>
-            )}
-          </div>
+          {/* Retira o campo de Input arquivo tradicional */}
+
           <div className="flex justify-end gap-2 pt-2">
             <DialogClose asChild>
               <Button type="button" variant="outline" onClick={handleClose}>
