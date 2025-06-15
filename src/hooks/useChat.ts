@@ -345,6 +345,8 @@ export const useChat = () => {
     if (!user) return null
 
     try {
+      console.log('Criando conversa para:', contact)
+
       // Verificar se já existe uma conversa com este contato
       const existingConversation = conversations.find(conv => {
         if (contact.type === 'turma') {
@@ -355,6 +357,7 @@ export const useChat = () => {
       })
 
       if (existingConversation) {
+        console.log('Conversa já existe:', existingConversation)
         return existingConversation
       }
 
@@ -372,48 +375,66 @@ export const useChat = () => {
 
       if (error) throw error
 
+      console.log('Conversa criada:', conversation)
+
       // Adicionar participantes
       const participants = [
         { conversation_id: conversation.id, profile_id: user.id }
       ]
 
-      // Se não for turma, adicionar o contato individual
+      // Se não for turma, adicionar o contato individual como participante
       if (contact.type !== 'turma') {
-        // Buscar o profile_id do contato baseado no tipo
-        let profileId = null
-        
-        if (contact.type === 'professor') {
-          const { data: professorData } = await supabase
-            .from('professores')
-            .select('user_id')
-            .eq('id', contact.id)
-            .single()
-          
-          profileId = professorData?.user_id
-        } else if (contact.type === 'aluno') {
-          // Para alunos, assumindo que não têm user_id na auth, vamos criar um registro temporário
-          // ou usar o próprio ID do aluno como reference
-          profileId = contact.id
-        }
-
-        if (profileId) {
-          participants.push({ conversation_id: conversation.id, profile_id: profileId })
-        }
+        // Para conversas individuais, vamos criar um registro temporário com o ID do contato
+        // Isso permitirá identificar com quem é a conversa
+        participants.push({ 
+          conversation_id: conversation.id, 
+          profile_id: contact.id 
+        })
       }
+
+      console.log('Adicionando participantes:', participants)
 
       const { error: participantsError } = await supabase
         .from('conversation_participants')
         .insert(participants)
 
-      if (participantsError) throw participantsError
+      if (participantsError) {
+        console.error('Erro ao adicionar participantes:', participantsError)
+        // Se houver erro ao adicionar participantes, remover a conversa criada
+        await supabase.from('conversations').delete().eq('id', conversation.id)
+        throw participantsError
+      }
+
+      console.log('Participantes adicionados com sucesso')
 
       // Refetch conversations para atualizar a lista
       await fetchConversations()
 
-      return conversation
+      // Retornar a conversa criada
+      const newConversation = {
+        ...conversation,
+        recipient: contact.type === 'turma' ? {
+          id: contact.id,
+          name: contact.name,
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name)}&background=3b82f6&color=fff`,
+          type: 'class' as const,
+          school_id: conversation.school_id
+        } : {
+          id: contact.id,
+          name: contact.name,
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name)}&background=10b981&color=fff`,
+          type: contact.type === 'professor' ? 'teacher' : 'student' as const,
+          school_id: conversation.school_id
+        },
+        lastMessage: 'Conversa iniciada',
+        lastMessageTimestamp: conversation.created_at,
+        unreadCount: 0
+      } as Conversation
+
+      return newConversation
     } catch (error: any) {
       console.error('Erro ao criar conversa:', error)
-      toast.error('Erro ao criar conversa')
+      toast.error('Erro ao criar conversa: ' + (error.message || 'Erro desconhecido'))
       return null
     }
   }
