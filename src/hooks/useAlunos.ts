@@ -52,11 +52,7 @@ export function useAlunos() {
     setLoading(false)
   }
 
-  useEffect(() => {
-    fetchAlunos()
-  }, [])
-
-  // Insere o aluno no Supabase e refaz o fetch
+  // Insere o aluno via Edge Function para garantir segurança
   const createAluno = async (formData: any) => {
     if (!user) {
       toast.error("É necessário estar autenticado para registrar um aluno.")
@@ -75,27 +71,48 @@ export function useAlunos() {
       return { success: false }
     }
 
-    const { nome, email, telefone, turma, instrumento, foto_url } = formData;
-    const { data, error } = await supabase.from("alunos").insert([{
-      nome,
-      email,
-      telefone,
-      turma_id: turma ? await getTurmaIdByNome(turma) : null,
-      instrumento,
-      foto_url: foto_url ?? "",
-      school_id: profileData.school_id
-    }])
+    try {
+      console.log('Criando aluno via Edge Function:', formData)
 
-    if (error) {
+      const { data, error } = await supabase.functions.invoke('create-access', {
+        body: {
+          email: formData.email,
+          password: formData.senha || 'temporaria123', // Senha temporária se não fornecida
+          nome_completo: formData.nome,
+          tipo_usuario: 'aluno',
+          school_id: profileData.school_id,
+          metadata: {
+            telefone: formData.telefone,
+            endereco: formData.endereco,
+            responsavel: formData.responsavel,
+            telefone_responsavel: formData.telefone_responsavel,
+            data_nascimento: formData.data_nascimento,
+            instrumento: formData.instrumento
+          }
+        }
+      })
+
+      if (error) {
+        console.error('Erro na Edge Function:', error)
+        throw new Error(error.message)
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro desconhecido')
+      }
+
+      console.log('Aluno criado com sucesso:', data)
+      toast.success("Aluno registrado com sucesso!")
+      
+      // Refaz a busca para atualizar a lista
+      await fetchAlunos()
+      return { success: true }
+
+    } catch (error) {
       console.error("Erro ao registrar aluno:", error)
-      toast.error("Erro ao registrar aluno.")
+      toast.error(`Erro ao registrar aluno: ${error.message}`)
       return { success: false }
     }
-
-    toast.success("Aluno registrado!")
-    // Refaz a busca para atualizar a lista
-    await fetchAlunos()
-    return { success: true }
   }
 
   // Função utilitária para pegar o id da turma pelo nome (opcional)
