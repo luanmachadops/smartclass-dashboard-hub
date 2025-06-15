@@ -40,6 +40,13 @@ export function AlunoFotoUpload({
 
   return (
     <div className="flex flex-col items-center mt-2 mb-2">
+      {/* Texto minimalista acima do círculo */}
+      <div className="text-center mb-2">
+        <span className="block text-sm font-semibold text-muted-foreground">Foto do aluno</span>
+        <span className="block text-xs text-muted-foreground/80">
+          Clique no círculo para adicionar ou alterar a foto
+        </span>
+      </div>
       <div
         className="relative group cursor-pointer w-24 h-24"
         onClick={handleAvatarClick}
@@ -58,7 +65,7 @@ export function AlunoFotoUpload({
             </AvatarFallback>
           )}
         </Avatar>
-        {/* Texto removido: <div className="absolute ...">{previewUrl ? "Alterar" : "Adicionar"} Foto</div> */}
+        {/* Nenhum texto abaixo do círculo */}
         <input
           ref={inputRef}
           type="file"
