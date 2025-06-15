@@ -92,21 +92,28 @@ export function useTurmas() {
       return { success: false }
     }
 
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profileData?.school_id) {
-      console.error('Erro ao buscar perfil da escola:', profileError)
-      toast.error("Não foi possível identificar sua escola para criar a turma.")
-      return { success: false }
-    }
-    
     try {
       console.log('Dados da turma para criar:', turmaData)
       
+      // Tentar buscar o school_id do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil da escola:', profileError)
+        toast.error("Erro ao identificar sua escola. Verifique se seu perfil está configurado corretamente.")
+        return { success: false }
+      }
+
+      if (!profileData || !profileData.school_id) {
+        console.error('Usuário sem school_id:', profileData)
+        toast.error("Seu perfil não está associado a uma escola. Entre em contato com o suporte.")
+        return { success: false }
+      }
+
       const { data, error } = await supabase
         .from('turmas')
         .insert([{
