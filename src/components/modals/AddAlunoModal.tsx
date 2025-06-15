@@ -54,30 +54,43 @@ export function AddAlunoModal({
     setLoading(true);
     const result = await createAluno(formData);
     if (result.success) {
-      setOpen(false);
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 1800);
-      setFormData({
-        nome: "",
-        email: "",
-        telefone: "",
-        turma: "",
-        responsavel: "",
-        telefoneResponsavel: "",
-        instrumento: "",
-        foto: null
-      });
-      setPreviewImage(null);
+      setTimeout(() => {
+        setShowConfetti(false);
+        setOpen(false);  // fecha o modal depois do confetti
+      }, 1800);
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   };
   const instrumentos = [
     "Piano", "Violão", "Guitarra", "Baixo", "Bateria", "Violino", "Violoncelo",
     "Flauta", "Saxofone", "Trompete", "Trombone", "Clarinete", "Canto", "Ukulele",
     "Teclado", "Harmônica"
   ];
-  return <>
-      <Dialog open={open} onOpenChange={setOpen}>
+  const handleOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (!value) {
+      setTimeout(() => {
+        setShowConfetti(false);
+        setFormData({
+          nome: "",
+          email: "",
+          telefone: "",
+          turma: "",
+          responsavel: "",
+          telefoneResponsavel: "",
+          instrumento: "",
+          foto: null
+        });
+        setPreviewImage(null);
+        setLoading(false);
+      }, 200); // pós animação de saída
+    }
+  };
+  return (
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           {trigger}
         </DialogTrigger>
@@ -200,7 +213,7 @@ export function AddAlunoModal({
                   type="button"
                   variant="outline"
                   className="rounded-xl border-blue-300 text-gray-700 hover:bg-blue-50"
-                  // onClick removido: DialogClose gerencia fechar!
+                  onClick={() => setOpen(false)}
                 >
                   Cancelar
                 </Button>
@@ -217,5 +230,6 @@ export function AddAlunoModal({
         </DialogContent>
       </Dialog>
       {showConfetti && <Confetti />}
-    </>;
+    </>
+  );
 }
