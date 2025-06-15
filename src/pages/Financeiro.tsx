@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { 
   DollarSign, 
   TrendingUp, 
@@ -14,12 +15,37 @@ import {
   CheckCircle,
   Clock
 } from "lucide-react"
+import { useFinanceiro } from "@/hooks/useFinanceiro"
+import { useTurmas } from "@/hooks/useTurmas"
 
 export default function Financeiro() {
+  const { financeiro, loading: loadingFinanceiro } = useFinanceiro()
+  const { turmas, loading: loadingTurmas } = useTurmas()
+
+  // Calcular estatísticas baseadas nos dados reais
+  const receitaTotal = financeiro
+    .filter(item => item.tipo === 'receita' && item.status === 'pago')
+    .reduce((total, item) => total + Number(item.valor), 0)
+
+  const mensalidadesPagas = financeiro.filter(item => 
+    item.categoria === 'mensalidade' && item.status === 'pago'
+  ).length
+
+  const mensalidadesTotal = financeiro.filter(item => 
+    item.categoria === 'mensalidade'
+  ).length
+
+  const percentualPago = mensalidadesTotal > 0 ? 
+    Math.round((mensalidadesPagas / mensalidadesTotal) * 100) : 0
+
+  const mensalidadesPendentes = financeiro.filter(item => 
+    item.categoria === 'mensalidade' && item.status !== 'pago'
+  )
+
   const estatisticasFinanceiras = [
     {
       titulo: "Receita Mensal",
-      valor: "R$ 12.450",
+      valor: `R$ ${receitaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       mudanca: "+8.2%",
       tendencia: "up",
       icon: DollarSign,
@@ -28,7 +54,7 @@ export default function Financeiro() {
     },
     {
       titulo: "Mensalidades Pagas",
-      valor: "89%",
+      valor: `${percentualPago}%`,
       mudanca: "+2.1%",
       tendencia: "up",
       icon: CheckCircle,
@@ -37,7 +63,7 @@ export default function Financeiro() {
     },
     {
       titulo: "Inadimplência",
-      valor: "11%",
+      valor: `${100 - percentualPago}%`,
       mudanca: "-1.5%",
       tendencia: "down",
       icon: AlertTriangle,
@@ -46,7 +72,7 @@ export default function Financeiro() {
     },
     {
       titulo: "Mensalidades Pendentes",
-      valor: "14",
+      valor: mensalidadesPendentes.length.toString(),
       mudanca: "-3",
       tendencia: "down",
       icon: Clock,
@@ -55,21 +81,20 @@ export default function Financeiro() {
     }
   ]
 
-  const mensalidadesPendentes = [
-    { aluno: "Ana Silva", turma: "Piano Intermediário", valor: 180, diasAtraso: 5, status: "atrasado" },
-    { aluno: "Carlos Santos", turma: "Violão Iniciante", valor: 150, diasAtraso: 12, status: "atrasado" },
-    { aluno: "Maria Oliveira", turma: "Canto Popular", valor: 200, diasAtraso: 2, status: "pendente" },
-    { aluno: "João Costa", turma: "Bateria Avançado", valor: 220, diasAtraso: 8, status: "atrasado" },
-    { aluno: "Paula Lima", turma: "Guitarra Rock", valor: 190, diasAtraso: 15, status: "critico" }
-  ]
+  // Calcular receita por turma
+  const receitaPorTurma = turmas.map(turma => {
+    const alunosCount = turma.alunos || 0
+    const valorMensal = turma.valor_mensal || 150
+    const receita = alunosCount * valorMensal
+    const percentual = receitaTotal > 0 ? Math.round((receita / receitaTotal) * 100) : 0
 
-  const receitaPorTurma = [
-    { turma: "Piano Intermediário", alunos: 8, receita: 1440, percentual: 23 },
-    { turma: "Violão Iniciante", alunos: 12, receita: 1800, percentual: 29 },
-    { turma: "Bateria Avançado", alunos: 6, receita: 1320, percentual: 21 },
-    { turma: "Canto Popular", alunos: 10, receita: 2000, percentual: 32 },
-    { turma: "Guitarra Rock", alunos: 7, receita: 1330, percentual: 21 }
-  ]
+    return {
+      turma: turma.nome,
+      alunos: alunosCount,
+      receita,
+      percentual: Math.min(percentual, 100)
+    }
+  })
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -87,6 +112,58 @@ export default function Financeiro() {
       case "pendente": return "secondary"
       default: return "outline"
     }
+  }
+
+  const getDiasAtraso = (dataVencimento: string) => {
+    const hoje = new Date()
+    const vencimento = new Date(dataVencimento)
+    const diffTime = hoje.getTime() - vencimento.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return Math.max(0, diffDays)
+  }
+
+  if (loadingFinanceiro || loadingTurmas) {
+    return (
+      <DashboardLayout title="Gestão Financeira">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -124,34 +201,48 @@ export default function Financeiro() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Mensalidades Pendentes
+                Mensalidades Pendentes ({mensalidadesPendentes.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mensalidadesPendentes.map((mensalidade, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h4 className="font-medium">{mensalidade.aluno}</h4>
-                        <Badge variant={getStatusBadge(mensalidade.status)}>
-                          {mensalidade.status}
-                        </Badge>
+              {mensalidadesPendentes.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                  <p className="text-muted-foreground">Todas as mensalidades estão em dia!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {mensalidadesPendentes.slice(0, 5).map((mensalidade) => {
+                    const diasAtraso = getDiasAtraso(mensalidade.data_vencimento)
+                    const status = diasAtraso > 30 ? 'critico' : diasAtraso > 0 ? 'atrasado' : 'pendente'
+                    
+                    return (
+                      <div key={mensalidade.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-medium">{mensalidade.aluno?.nome || 'Aluno não identificado'}</h4>
+                            <Badge variant={getStatusBadge(status)}>
+                              {status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{mensalidade.descricao}</p>
+                          {diasAtraso > 0 && (
+                            <p className={`text-sm font-medium ${getStatusColor(status)}`}>
+                              {diasAtraso} dias de atraso
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold">R$ {Number(mensalidade.valor).toFixed(2)}</p>
+                          <Button size="sm" variant="outline">
+                            Cobrar
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{mensalidade.turma}</p>
-                      <p className={`text-sm font-medium ${getStatusColor(mensalidade.status)}`}>
-                        {mensalidade.diasAtraso} dias de atraso
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">R$ {mensalidade.valor}</p>
-                      <Button size="sm" variant="outline">
-                        Cobrar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -164,20 +255,26 @@ export default function Financeiro() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {receitaPorTurma.map((turma, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{turma.turma}</span>
-                      <span className="text-muted-foreground">R$ {turma.receita}</span>
+              {receitaPorTurma.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Nenhuma turma cadastrada</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {receitaPorTurma.map((turma, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">{turma.turma}</span>
+                        <span className="text-muted-foreground">R$ {turma.receita.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <Progress value={turma.percentual} className="h-2" />
+                      <div className="text-xs text-muted-foreground">
+                        {turma.alunos} alunos
+                      </div>
                     </div>
-                    <Progress value={turma.percentual} className="h-2" />
-                    <div className="text-xs text-muted-foreground">
-                      {turma.alunos} alunos
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

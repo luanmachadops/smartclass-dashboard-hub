@@ -5,71 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search, Mail, Phone, Users, Calendar, Star } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Search, Mail, Phone, Users, Calendar, Star, Plus } from "lucide-react"
+import { useProfessores } from "@/hooks/useProfessores"
+import { useState } from "react"
 
 export default function Professores() {
-  const professores = [
-    {
-      id: 1,
-      nome: "Carlos Silva",
-      email: "carlos.silva@escola.com",
-      telefone: "(11) 99999-9999",
-      especialidade: "Violão",
-      turmas: 2,
-      totalAlunos: 18,
-      avaliacao: 4.8,
-      dataContratacao: "2023-08-15",
-      status: "ativo"
-    },
-    {
-      id: 2,
-      nome: "Ana Costa",
-      email: "ana.costa@escola.com", 
-      telefone: "(11) 88888-8888",
-      especialidade: "Piano",
-      turmas: 1,
-      totalAlunos: 8,
-      avaliacao: 4.9,
-      dataContratacao: "2023-09-01",
-      status: "ativo"
-    },
-    {
-      id: 3,
-      nome: "João Santos",
-      email: "joao.santos@escola.com",
-      telefone: "(11) 77777-7777", 
-      especialidade: "Bateria",
-      turmas: 1,
-      totalAlunos: 6,
-      avaliacao: 4.7,
-      dataContratacao: "2024-01-10",
-      status: "ativo"
-    },
-    {
-      id: 4,
-      nome: "Maria Oliveira",
-      email: "maria.oliveira@escola.com",
-      telefone: "(11) 66666-6666",
-      especialidade: "Canto", 
-      turmas: 1,
-      totalAlunos: 10,
-      avaliacao: 4.6,
-      dataContratacao: "2023-07-20",
-      status: "ativo"
-    },
-    {
-      id: 5,
-      nome: "Pedro Lima",
-      email: "pedro.lima@escola.com",
-      telefone: "(11) 55555-5555",
-      especialidade: "Guitarra",
-      turmas: 1,
-      totalAlunos: 7,
-      avaliacao: 4.5,
-      dataContratacao: "2024-02-15",
-      status: "licenca"
-    }
-  ]
+  const { professores, loading } = useProfessores()
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const filteredProfessores = professores.filter(professor =>
+    professor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    professor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    professor.especialidades?.some(esp => esp.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
+
+  const professoresAtivos = professores.filter(p => p.ativo)
+  const avaliacaoMedia = 4.7 // Temporário até implementar avaliações reais
 
   const estatisticas = [
     {
@@ -81,19 +33,54 @@ export default function Professores() {
     },
     {
       titulo: "Professores Ativos", 
-      valor: professores.filter(p => p.status === "ativo").length.toString(),
+      valor: professoresAtivos.length.toString(),
       icon: Calendar,
       cor: "text-green-600",
       fundo: "bg-green-100 dark:bg-green-900/50"
     },
     {
       titulo: "Avaliação Média",
-      valor: `${(professores.reduce((acc, p) => acc + p.avaliacao, 0) / professores.length).toFixed(1)}⭐`,
+      valor: `${avaliacaoMedia.toFixed(1)}⭐`,
       icon: Star,
       cor: "text-yellow-600", 
       fundo: "bg-yellow-100 dark:bg-yellow-900/50"
     }
   ]
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Gestão de Professores">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <CardContent className="p-4">
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-32 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout title="Gestão de Professores">
@@ -117,92 +104,118 @@ export default function Professores() {
           ))}
         </div>
 
-        {/* Barra de Pesquisa */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Pesquisar professores por nome, especialidade ou email..."
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Barra de Pesquisa e Botão Adicionar */}
+        <div className="flex gap-4">
+          <Card className="flex-1">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Pesquisar professores por nome, especialidade ou email..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Professor
+          </Button>
+        </div>
 
         {/* Lista de Professores */}
         <Card>
           <CardHeader>
-            <CardTitle>Todos os Professores</CardTitle>
+            <CardTitle>Todos os Professores ({filteredProfessores.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {professores.map((professor) => (
-                <div key={professor.id} className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src="/placeholder.svg" />
-                        <AvatarFallback>
-                          {professor.nome.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-foreground">{professor.nome}</h3>
-                          <Badge variant={professor.status === "ativo" ? "default" : "secondary"}>
-                            {professor.status === "ativo" ? "Ativo" : "Licença"}
-                          </Badge>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            <span className="text-sm font-medium text-foreground">{professor.avaliacao}</span>
-                          </div>
-                        </div>
+            {filteredProfessores.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {searchTerm ? "Nenhum professor encontrado com esse termo de busca" : "Nenhum professor cadastrado ainda"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredProfessores.map((professor) => (
+                  <div key={professor.id} className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4 flex-1">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback>
+                            {professor.nome.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-4 w-4" />
-                            <span>{professor.email}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-foreground">{professor.nome}</h3>
+                            <Badge variant={professor.ativo ? "default" : "secondary"}>
+                              {professor.ativo ? "Ativo" : "Inativo"}
+                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                              <span className="text-sm font-medium text-foreground">{avaliacaoMedia}</span>
+                            </div>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-4 w-4" />
-                            <span>{professor.telefone}</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Mail className="h-4 w-4" />
+                              <span>{professor.email}</span>
+                            </div>
+                            
+                            {professor.telefone && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="h-4 w-4" />
+                                <span>{professor.telefone}</span>
+                              </div>
+                            )}
+                            
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">Especialidades: </span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {professor.especialidades?.map((esp, index) => (
+                                  <Badge key={index} variant="outline">{esp}</Badge>
+                                ))}
+                              </div>
+                            </div>
+
+                            {professor.valor_hora && (
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Valor/hora: </span>
+                                <span className="font-medium text-foreground">
+                                  R$ {professor.valor_hora.toFixed(2)}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          
+
                           <div className="text-sm">
-                            <span className="text-muted-foreground">Especialidade: </span>
-                            <Badge variant="outline">{professor.especialidade}</Badge>
+                            <span className="text-muted-foreground">Status: </span>
+                            <span className={`font-medium ${professor.ativo ? 'text-green-600' : 'text-red-600'}`}>
+                              {professor.ativo ? 'Ativo' : 'Inativo'}
+                            </span>
                           </div>
-
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users className="h-4 w-4" />
-                            <span>{professor.turmas} turmas • {professor.totalAlunos} alunos</span>
-                          </div>
-                        </div>
-
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Contratado em: </span>
-                          <span className="font-medium text-foreground">
-                            {new Date(professor.dataContratacao).toLocaleDateString('pt-BR')}
-                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        Ver Horários
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Editar
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          Ver Horários
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Editar
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
