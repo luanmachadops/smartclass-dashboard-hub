@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface Turma {
   id: string
@@ -23,6 +25,7 @@ export interface Turma {
 export function useTurmas() {
   const [turmas, setTurmas] = useState<Turma[]>([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   const fetchTurmas = async () => {
     try {
@@ -84,10 +87,26 @@ export function useTurmas() {
   }
 
   const createTurma = async (turmaData: any) => {
+    if (!user) {
+      toast.error("É necessário estar autenticado para criar uma turma.")
+      return { success: false }
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('school_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profileData?.school_id) {
+      console.error('Erro ao buscar perfil da escola:', profileError)
+      toast.error("Não foi possível identificar sua escola para criar a turma.")
+      return { success: false }
+    }
+    
     try {
       console.log('Dados da turma para criar:', turmaData)
       
-      // Horário padrão temporário (será definido posteriormente na criação de aulas)
       const { data, error } = await supabase
         .from('turmas')
         .insert([{
@@ -97,7 +116,8 @@ export function useTurmas() {
           dia_semana: "A definir",
           horario_inicio: "00:00",
           horario_fim: "00:00",
-          vagas_total: 15 // Valor padrão
+          vagas_total: 15, // Valor padrão
+          school_id: profileData.school_id
         }])
         .select()
         .single()

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface Aula {
   id: string
@@ -22,6 +23,7 @@ interface Aula {
 export function useAulas(turmaId?: string) {
   const [aulas, setAulas] = useState<Aula[]>([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   const fetchAulas = async () => {
     if (!turmaId) {
@@ -77,9 +79,26 @@ export function useAulas(turmaId?: string) {
     horario_fim: string
     observacoes?: string
   }) => {
+    if (!user) {
+      toast.error("É necessário estar autenticado para criar uma aula.")
+      return { success: false }
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('school_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profileData?.school_id) {
+      console.error('Erro ao buscar perfil da escola:', profileError)
+      toast.error("Não foi possível identificar sua escola para criar a aula.")
+      return { success: false }
+    }
+
     const { data, error } = await supabase
       .from("aulas")
-      .insert([aulaData])
+      .insert([{ ...aulaData, school_id: profileData.school_id }])
       .select()
 
     if (error) {

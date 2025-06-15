@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface Professor {
   id: string
@@ -19,6 +20,7 @@ export interface Professor {
 export function useProfessores() {
   const [professores, setProfessores] = useState<Professor[]>([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   const fetchProfessores = async () => {
     try {
@@ -94,6 +96,41 @@ export function useProfessores() {
     }
   }
 
+  const createProfessor = async (professorData: Omit<Professor, 'id' | 'school_id' | 'avaliacao_media' | 'total_aulas' | 'presenca_media'>) => {
+    if (!user) {
+      toast.error("É necessário estar autenticado para adicionar um professor.")
+      return { success: false }
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('school_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profileData?.school_id) {
+      console.error('Erro ao buscar perfil da escola:', profileError)
+      toast.error("Não foi possível identificar sua escola para adicionar o professor.")
+      return { success: false }
+    }
+
+    const { data, error } = await supabase
+      .from('professores')
+      .insert([{ ...professorData, school_id: profileData.school_id }])
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('Erro ao adicionar professor:', error)
+      toast.error('Erro ao adicionar professor')
+      return { success: false }
+    }
+
+    toast.success('Professor adicionado com sucesso!')
+    await fetchProfessores()
+    return { success: true, data }
+  }
+
   useEffect(() => {
     fetchProfessores()
   }, [])
@@ -101,6 +138,7 @@ export function useProfessores() {
   return {
     professores,
     loading,
-    refetch: fetchProfessores
+    refetch: fetchProfessores,
+    createProfessor
   }
 }
