@@ -68,6 +68,60 @@ export type Database = {
           },
         ]
       }
+      aulas: {
+        Row: {
+          created_at: string | null
+          data_aula: string
+          horario_fim: string
+          horario_inicio: string
+          id: string
+          observacoes: string | null
+          professor_id: string | null
+          status: string | null
+          turma_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_aula: string
+          horario_fim: string
+          horario_inicio: string
+          id?: string
+          observacoes?: string | null
+          professor_id?: string | null
+          status?: string | null
+          turma_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_aula?: string
+          horario_fim?: string
+          horario_inicio?: string
+          id?: string
+          observacoes?: string | null
+          professor_id?: string | null
+          status?: string | null
+          turma_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aulas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chamadas: {
         Row: {
           created_at: string | null
@@ -179,6 +233,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cursos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       financeiro: {
         Row: {
@@ -517,6 +598,7 @@ export type Database = {
         Row: {
           ativa: boolean | null
           created_at: string | null
+          curso_id: string | null
           dia_semana: string
           horario_fim: string
           horario_inicio: string
@@ -532,6 +614,7 @@ export type Database = {
         Insert: {
           ativa?: boolean | null
           created_at?: string | null
+          curso_id?: string | null
           dia_semana: string
           horario_fim: string
           horario_inicio: string
@@ -547,6 +630,7 @@ export type Database = {
         Update: {
           ativa?: boolean | null
           created_at?: string | null
+          curso_id?: string | null
           dia_semana?: string
           horario_fim?: string
           horario_inicio?: string
@@ -559,14 +643,25 @@ export type Database = {
           vagas_total?: number | null
           valor_mensal?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "turmas_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_can_access_conversation: {
+        Args: { conversation_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -21,30 +21,18 @@ export function useCursos() {
       setLoading(true);
       console.log('Buscando cursos...');
       
-      // Usando a tabela alunos temporariamente até que a tabela cursos seja criada
       const { data, error } = await supabase
-        .from("alunos")
-        .select("instrumento")
-        .not("instrumento", "is", null);
+        .from("cursos")
+        .select("*")
+        .order('nome');
       
       if (error) {
         console.error('Erro ao buscar cursos:', error);
         throw error;
       }
       
-      // Criar cursos únicos baseados nos instrumentos dos alunos
-      const instrumentosUnicos = [...new Set(data?.map(item => item.instrumento).filter(Boolean))] as string[];
-      const cursosFromInstrumentos: Curso[] = instrumentosUnicos.map((instrumento, index) => ({
-        id: `curso-${index}`,
-        nome: instrumento,
-        descricao: `Curso de ${instrumento}`,
-        ativo: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-      
-      console.log('Cursos carregados:', cursosFromInstrumentos);
-      setCursos(cursosFromInstrumentos);
+      console.log('Cursos carregados:', data);
+      setCursos(data || []);
     } catch (error) {
       console.error('Erro no fetchCursos:', error);
       toast.error("Erro ao carregar cursos");
@@ -57,21 +45,25 @@ export function useCursos() {
     try {
       console.log('Adicionando curso:', curso);
       
-      // Simular adição de curso
-      const novoCurso: Curso = {
-        id: `curso-${Date.now()}`,
-        nome: curso.nome,
-        descricao: curso.descricao || null,
-        ativo: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from("cursos")
+        .insert({
+          nome: curso.nome,
+          descricao: curso.descricao || null
+        })
+        .select()
+        .single();
       
-      setCursos(prev => [novoCurso, ...prev]);
+      if (error) {
+        console.error('Erro ao adicionar curso:', error);
+        throw error;
+      }
       
-      console.log('Curso adicionado com sucesso:', novoCurso);
+      setCursos(prev => [data, ...prev]);
+      
+      console.log('Curso adicionado com sucesso:', data);
       toast.success("Curso adicionado com sucesso!");
-      return { success: true, data: novoCurso };
+      return { success: true, data };
     } catch (error) {
       console.error('Erro no addCurso:', error);
       toast.error("Erro ao adicionar curso");
