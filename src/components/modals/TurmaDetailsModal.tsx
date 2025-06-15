@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +28,6 @@ import { useProfessores } from "@/hooks/useProfessores";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
 interface TurmaDetailsModalProps {
@@ -43,13 +43,13 @@ export function TurmaDetailsModal({ turma, open, onOpenChange }: TurmaDetailsMod
   const [professoresDaTurma, setProfessoresDaTurma] = useState<any[]>([]);
   const [loadingProfessores, setLoadingProfessores] = useState(false);
   
+  // Sempre chamar os hooks na mesma ordem, independentemente de turma existir
   const { alunos, loading: alunosLoading } = useAlunos();
-  const { aulas, loading: aulasLoading, refetch: refetchAulas } = useAulas(turma?.id);
+  const { aulas, loading: aulasLoading, refetch: refetchAulas } = useAulas(turma?.id || '');
   const { professores } = useProfessores();
 
-  if (!turma) return null;
-
-  const alunosDaTurma = alunos.filter(aluno => aluno.turma_id === turma.id);
+  // Calcular dados apenas se turma existir
+  const alunosDaTurma = turma ? alunos.filter(aluno => aluno.turma_id === turma.id) : [];
 
   const fetchProfessoresDaTurma = async () => {
     if (!turma?.id) return;
@@ -110,6 +110,9 @@ export function TurmaDetailsModal({ turma, open, onOpenChange }: TurmaDetailsMod
       fetchProfessoresDaTurma();
     }
   }, [open, turma?.id]);
+
+  // Se não há turma, não renderizar o modal
+  if (!turma) return null;
 
   return (
     <>

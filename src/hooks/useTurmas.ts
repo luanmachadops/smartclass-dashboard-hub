@@ -160,6 +160,20 @@ export function useTurmas() {
 
   const deleteTurma = async (id: string) => {
     try {
+      // Primeiro verificar se há alunos matriculados na turma
+      const { data: alunos, error: alunosError } = await supabase
+        .from('alunos')
+        .select('id')
+        .eq('turma_id', id)
+
+      if (alunosError) throw alunosError
+
+      if (alunos && alunos.length > 0) {
+        toast.error(`Não é possível excluir a turma pois há ${alunos.length} aluno(s) matriculado(s). Transfira ou remova os alunos primeiro.`)
+        return
+      }
+
+      // Se não há alunos, proceder com a exclusão
       const { error } = await supabase
         .from('turmas')
         .delete()
@@ -171,7 +185,11 @@ export function useTurmas() {
       fetchTurmas()
     } catch (error) {
       console.error('Erro ao excluir turma:', error)
-      toast.error('Erro ao excluir turma')
+      if (error.code === '23503') {
+        toast.error('Não é possível excluir a turma pois há dados relacionados (alunos, aulas, etc.). Remova os dados relacionados primeiro.')
+      } else {
+        toast.error('Erro ao excluir turma')
+      }
     }
   }
 
