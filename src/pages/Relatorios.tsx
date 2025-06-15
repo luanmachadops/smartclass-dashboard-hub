@@ -1,311 +1,249 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Download, 
-  Calendar, 
-  Users, 
-  GraduationCap,
-  FileText
-} from "lucide-react"
-import { useTurmas } from "@/hooks/useTurmas"
-import { useAlunos } from "@/hooks/useAlunos"
-import { useProfessores } from "@/hooks/useProfessores"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { Download, FileBarChart, Users, TrendingUp, Calendar } from "lucide-react"
+import { useState } from "react"
+
+// Dados de exemplo para os gráficos
+const attendanceData = [
+  { name: 'Jan', presenca: 85 },
+  { name: 'Fev', presenca: 88 },
+  { name: 'Mar', presenca: 92 },
+  { name: 'Abr', presenca: 90 },
+  { name: 'Mai', presenca: 85 },
+  { name: 'Jun', presenca: 89 },
+]
+
+const instrumentData = [
+  { name: 'Violão', value: 35 },
+  { name: 'Piano', value: 25 },
+  { name: 'Bateria', value: 20 },
+  { name: 'Canto', value: 15 },
+  { name: 'Outros', value: 5 },
+]
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
 export default function Relatorios() {
-  const { turmas, loading: loadingTurmas } = useTurmas()
-  const { alunos, loading: loadingAlunos } = useAlunos()
-  const { professores, loading: loadingProfessores } = useProfessores()
-
-  const loading = loadingTurmas || loadingAlunos || loadingProfessores
-
-  // Calcular estatísticas baseadas nos dados reais
-  const totalAlunos = alunos.length
-  const alunosAtivos = alunos.filter(a => a.ativo).length
-  const novosMes = Math.floor(totalAlunos * 0.15) // Estimativa de 15% de novos alunos no mês
-  const taxaEvasao = totalAlunos > 0 ? ((totalAlunos - alunosAtivos) / totalAlunos * 100) : 0
-  const turmasAtivas = turmas.filter(t => t.ativa).length
-  const frequenciaGeral = 89 // Valor temporário até implementar presença real
-
-  const estatisticasGerais = [
-    {
-      titulo: "Frequência Geral",
-      valor: `${frequenciaGeral}%`,
-      mudanca: "+2.5%",
-      tendencia: "up",
-      icon: TrendingUp,
-      cor: "text-green-600",
-      fundo: "bg-green-100 dark:bg-green-900/50"
-    },
-    {
-      titulo: "Novos Alunos",
-      valor: novosMes.toString(),
-      mudanca: "+12.3%", 
-      tendencia: "up",
-      icon: GraduationCap,
-      cor: "text-blue-600",
-      fundo: "bg-blue-100 dark:bg-blue-900/50"
-    },
-    {
-      titulo: "Taxa de Evasão",
-      valor: `${taxaEvasao.toFixed(1)}%`,
-      mudanca: "-1.8%",
-      tendencia: "down", 
-      icon: TrendingDown,
-      cor: "text-red-600",
-      fundo: "bg-red-100 dark:bg-red-900/50"
-    },
-    {
-      titulo: "Turmas Ativas",
-      valor: turmasAtivas.toString(),
-      mudanca: "+2",
-      tendencia: "up",
-      icon: Users,
-      cor: "text-purple-600",
-      fundo: "bg-purple-100 dark:bg-purple-900/50"
-    }
-  ]
-
-  // Frequência por turma (dados reais)
-  const frequenciaTurmas = turmas.map(turma => ({
-    nome: turma.nome,
-    presenca: turma.presenca || Math.floor(Math.random() * 20) + 80, // Usar presenca real quando disponível
-    alunos: turma.alunos || 0
-  }))
-
-  // Performance dos professores (baseado em dados reais)
-  const professoresPerformance = professores.map(professor => ({
-    nome: professor.nome,
-    turmas: 1, // Temporário - calcular baseado na relação turma_professores
-    presencaMedia: Math.floor(Math.random() * 20) + 80, // Temporário
-    avaliacao: 4.5 + Math.random() * 0.5 // Temporário
-  }))
-
-  const relatoriosDisponiveis = [
-    {
-      titulo: "Relatório de Frequência Mensal",
-      descricao: "Análise detalhada da presença por turma e aluno",
-      periodo: "Dezembro 2024",
-      formato: "PDF"
-    },
-    {
-      titulo: "Relatório de Performance dos Professores",
-      descricao: "Avaliação e estatísticas dos educadores",
-      periodo: "Semestre 2/2024", 
-      formato: "Excel"
-    },
-    {
-      titulo: "Relatório Financeiro",
-      descricao: "Receitas, gastos e análise de inadimplência",
-      periodo: "Ano 2024",
-      formato: "PDF"
-    },
-    {
-      titulo: "Relatório de Satisfação",
-      descricao: "Pesquisa de satisfação com alunos e responsáveis",
-      periodo: "Dezembro 2024",
-      formato: "PDF"
-    }
-  ]
-
-  if (loading) {
-    return (
-      <DashboardLayout title="Relatórios e Análises">
-        <div className="p-6 lg:p-8 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
+  const [periodoSelecionado, setPeriodoSelecionado] = useState('6m')
+  
   return (
-    <DashboardLayout title="Relatórios e Análises">
-      <div className="p-6 lg:p-8 space-y-8">
-        {/* Estatísticas Gerais */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {estatisticasGerais.map((stat, index) => (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full ${stat.fundo} flex items-center justify-center`}>
-                      <stat.icon className={`h-5 w-5 ${stat.cor}`} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.titulo}</p>
-                      <p className="text-2xl font-bold text-foreground">{stat.valor}</p>
-                    </div>
-                  </div>
-                  <div className={`text-sm font-medium ${
-                    stat.tendencia === 'up' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {stat.mudanca}
-                  </div>
+    <DashboardLayout title="Relatórios">
+      <div className="p-6 lg:p-8 space-y-6">
+        {/* Filtros e Controles */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Análise de Desempenho</h2>
+            <p className="text-muted-foreground">Visualize métricas e tendências da escola</p>
+          </div>
+          
+          <div className="flex gap-2">
+            <Select defaultValue="6m" onValueChange={setPeriodoSelecionado}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecione o período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1m">Último mês</SelectItem>
+                <SelectItem value="3m">Últimos 3 meses</SelectItem>
+                <SelectItem value="6m">Últimos 6 meses</SelectItem>
+                <SelectItem value="1y">Último ano</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button variant="outline" className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+          </div>
+        </div>
+        
+        {/* Cards de Resumo */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total de Alunos</p>
+                  <p className="text-2xl font-bold">248</p>
+                  <p className="text-xs text-green-600">+12% vs período anterior</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Taxa de Retenção</p>
+                  <p className="text-2xl font-bold">92%</p>
+                  <p className="text-xs text-green-600">+3% vs período anterior</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/50 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Média de Presença</p>
+                  <p className="text-2xl font-bold">88%</p>
+                  <p className="text-xs text-red-600">-2% vs período anterior</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                  <FileBarChart className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Novas Matrículas</p>
+                  <p className="text-2xl font-bold">32</p>
+                  <p className="text-xs text-green-600">+8% vs período anterior</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Gráficos */}
+        <Tabs defaultValue="presenca" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="presenca">Presença</TabsTrigger>
+            <TabsTrigger value="instrumentos">Instrumentos</TabsTrigger>
+            <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+            <TabsTrigger value="desempenho">Desempenho</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="presenca">
+            <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+              <CardHeader>
+                <CardTitle>Taxa de Presença por Mês</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={attendanceData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Presença']} />
+                      <Bar dataKey="presenca" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Frequência por Turma */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Frequência por Turma
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {frequenciaTurmas.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhuma turma cadastrada</p>
+          </TabsContent>
+          
+          <TabsContent value="instrumentos">
+            <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+              <CardHeader>
+                <CardTitle>Distribuição de Alunos por Instrumento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={instrumentData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {instrumentData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value}%`, 'Alunos']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {frequenciaTurmas.map((turma, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium text-foreground">{turma.nome}</span>
-                        <span className="text-muted-foreground">{turma.presenca}% • {turma.alunos} alunos</span>
-                      </div>
-                      <Progress value={turma.presenca} className="h-2" />
-                    </div>
-                  ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="financeiro">
+            <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+              <CardHeader>
+                <CardTitle>Relatório Financeiro</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center h-60">
+                  <p className="text-muted-foreground">Dados financeiros serão exibidos aqui</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Performance dos Professores */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="desempenho">
+            <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+              <CardHeader>
+                <CardTitle>Desempenho dos Alunos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center h-60">
+                  <p className="text-muted-foreground">Dados de desempenho serão exibidos aqui</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        {/* Relatórios Disponíveis */}
+        <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+          <CardHeader>
+            <CardTitle>Relatórios Disponíveis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Button variant="outline" className="h-auto py-4 px-4 justify-start gap-3">
                 <Users className="h-5 w-5" />
-                Performance dos Professores
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {professoresPerformance.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhum professor cadastrado</p>
+                <div className="text-left">
+                  <p className="font-medium">Relatório de Alunos</p>
+                  <p className="text-xs text-muted-foreground">Dados completos de todos os alunos</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {professoresPerformance.map((professor, index) => (
-                    <div key={index} className="p-4 rounded-lg bg-muted/50">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-foreground">{professor.nome}</h4>
-                        <Badge variant="outline">⭐ {professor.avaliacao.toFixed(1)}</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground mb-2">
-                        {professor.turmas} turma(s) • Presença média: {professor.presencaMedia}%
-                      </div>
-                      <Progress value={professor.presencaMedia} className="h-1.5" />
-                    </div>
-                  ))}
+              </Button>
+              
+              <Button variant="outline" className="h-auto py-4 px-4 justify-start gap-3">
+                <Calendar className="h-5 w-5" />
+                <div className="text-left">
+                  <p className="font-medium">Relatório de Presença</p>
+                  <p className="text-xs text-muted-foreground">Histórico de presença por turma</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Relatórios Disponíveis para Download */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Relatórios Disponíveis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {relatoriosDisponiveis.map((relatorio, index) => (
-                <div key={index} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-foreground">{relatorio.titulo}</h4>
-                    <Badge variant="secondary">{relatorio.formato}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{relatorio.descricao}</p>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{relatorio.periodo}</span>
-                    </div>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Download className="h-4 w-4" />
-                      Baixar
-                    </Button>
-                  </div>
+              </Button>
+              
+              <Button variant="outline" className="h-auto py-4 px-4 justify-start gap-3">
+                <TrendingUp className="h-5 w-5" />
+                <div className="text-left">
+                  <p className="font-medium">Relatório Financeiro</p>
+                  <p className="text-xs text-muted-foreground">Receitas e despesas detalhadas</p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Ações Rápidas */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Gerar Novo Relatório</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex-col gap-2">
-                <BarChart3 className="h-6 w-6" />
-                <span>Frequência</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col gap-2">
-                <Users className="h-6 w-6" />
-                <span>Professores</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col gap-2">
-                <GraduationCap className="h-6 w-6" />
-                <span>Alunos</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex-col gap-2">
-                <TrendingUp className="h-6 w-6" />
-                <span>Financeiro</span>
               </Button>
             </div>
           </CardContent>

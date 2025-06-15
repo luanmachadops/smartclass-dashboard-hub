@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { ConversationList } from '@/components/chat/ConversationList'
@@ -61,7 +60,7 @@ const Comunicacao: React.FC = () => {
   return (
     <DashboardLayout title="Comunicação">
       <div className="p-6 lg:p-8">
-        <div className="h-[calc(100vh-12rem)] flex bg-card rounded-lg border overflow-hidden">
+        <div className="h-[calc(100vh-12rem)] flex bg-card rounded-lg border overflow-hidden hover:shadow-xl hover:scale-105 transition-transform duration-300">
           {/* Lista de conversas - hidden em mobile quando chat está ativo */}
           {(!isMobile || !isMobileChatView) && (
             <ConversationList
@@ -89,7 +88,7 @@ const Comunicacao: React.FC = () => {
           ) : (
             // Placeholder quando nenhuma conversa está selecionada (apenas desktop)
             !isMobile && (
-              <div className="flex-1 flex items-center justify-center bg-muted/20">
+              <div className="flex-1 flex items-center justify-center bg-muted/20 hover:shadow-xl hover:scale-105 transition-transform duration-300">
                 <div className="text-center">
                   <div className="text-6xl mb-4">💬</div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">

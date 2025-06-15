@@ -95,7 +95,10 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.title} className="hover:shadow-xl hover:scale-105 transition-transform duration-300 bg-white bg-opacity-80 dark:bg-gray-900/70">
+            <Card
+              key={stat.title}
+              className="hover:shadow-xl hover:scale-105 transition-transform duration-300 bg-white bg-opacity-80 dark:bg-gray-900/70"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <div className={`h-14 w-14 rounded-full flex items-center justify-center ${stat.bgColor} shadow-md`}>

@@ -1,33 +1,22 @@
-
-import { useState } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
-import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
-import { TurmaDetailsModal } from "@/components/modals/TurmaDetailsModal"
-import { TurmaCard } from "@/components/TurmaCard"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Calendar, Clock, Plus } from "lucide-react"
+import { Calendar, Clock, Users } from "lucide-react"
 import { useTurmas } from "@/hooks/useTurmas"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
 
 export default function Turmas() {
-  const { turmas, loading, deleteTurma } = useTurmas()
-  const [selectedTurma, setSelectedTurma] = useState<any>(null)
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
-
-  const handleViewDetails = (turma: any) => {
-    setSelectedTurma(turma)
-    setDetailsModalOpen(true)
-  }
+  const { turmas, loading } = useTurmas()
 
   if (loading) {
     return (
-      <DashboardLayout title="Gestão de Turmas">
-        <div className="space-y-6 p-6 lg:p-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {[1, 2, 3].map((i) => (
+      <DashboardLayout title="Turmas">
+        <div className="p-6 lg:p-8 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
-                <CardContent className="p-4 lg:p-6">
+                <CardContent className="p-6">
                   <Skeleton className="h-20 w-full" />
                 </CardContent>
               </Card>
@@ -39,113 +28,39 @@ export default function Turmas() {
   }
 
   return (
-    <DashboardLayout title="Gestão de Turmas">
-      <div className="space-y-6 p-6 lg:p-8 max-w-7xl mx-auto">
-        {/* Header com estatísticas rápidas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          <Card className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white hover:shadow-lg transition-shadow">
-            <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-100">Total de Turmas</p>
-                  <p className="text-3xl font-bold">{turmas.length}</p>
+    <DashboardLayout title="Turmas">
+      <div className="p-6 lg:p-8 space-y-6">
+        {/* Exemplo de cards de turmas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Renderize cada turma como Card */}
+          {turmas.map((turma) => (
+            <Card key={turma.id} className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
+              <CardHeader>
+                <CardTitle>{turma.nome}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{turma.dia}</span>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                  <Users className="h-6 w-6" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>{turma.horario_inicio} - {turma.horario_fim}</span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white hover:shadow-lg transition-shadow">
-            <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-green-100">Turmas Ativas</p>
-                  <p className="text-3xl font-bold">
-                    {turmas.filter(t => t.ativa).length}
-                  </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>{turma.alunos} Alunos</span>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                  <Calendar className="h-6 w-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-500 to-violet-600 text-white hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
-            <CardContent className="p-4 lg:p-6">
-               <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm text-purple-100">Média de Presença</p>
-                    <p className="text-3xl font-bold">
-                      {turmas.length > 0 ? Math.round(turmas.reduce((acc, t) => acc + (t.presenca || 0), 0) / turmas.length) : 0}%
-                    </p>
-                </div>
-                 <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                    <Clock className="h-6 w-6" />
-                  </div>
-                </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Botão Adicionar Turma */}
-        <div className="flex justify-center sm:justify-end">
-          <AddTurmaModal
-            trigger={
-              <Button className="gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
-                Criar Turma
-              </Button>
-            }
-          />
-        </div>
-
-        {/* Lista de Turmas */}
-        <div>
-          <div className="mb-6 text-center sm:text-left">
-            <h2 className="text-2xl font-bold text-foreground">Todas as Turmas</h2>
-            <p className="text-muted-foreground">Clique em uma turma para ver os detalhes e gerenciar aulas</p>
-          </div>
-          
-          {turmas.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="mx-auto h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Nenhuma turma encontrada</h3>
-                <p className="text-muted-foreground mb-4">Comece criando sua primeira turma</p>
-                <AddTurmaModal
-                  trigger={
-                    <Button className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Criar primeira turma
-                    </Button>
-                  }
-                />
               </CardContent>
             </Card>
-          ) : (
-            <div className="space-y-4 lg:space-y-6">
-              {turmas.map((turma) => (
-                <TurmaCard
-                  key={turma.id}
-                  turma={turma}
-                  onDelete={deleteTurma}
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-            </div>
-          )}
+          ))}
         </div>
-
-        {/* Modal de Detalhes */}
-        <TurmaDetailsModal
-          turma={selectedTurma}
-          open={detailsModalOpen}
-          onOpenChange={setDetailsModalOpen}
+        <AddTurmaModal
+          trigger={
+            <Button>
+              Adicionar Turma
+            </Button>
+          }
         />
       </div>
     </DashboardLayout>

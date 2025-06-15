@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -88,7 +87,7 @@ export default function Professores() {
         {/* Estatísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {estatisticas.map((stat, index) => (
-            <Card key={index}>
+            <Card key={index} className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={`h-10 w-10 rounded-full ${stat.fundo} flex items-center justify-center`}>
@@ -106,7 +105,7 @@ export default function Professores() {
 
         {/* Barra de Pesquisa e Botão Adicionar */}
         <div className="flex gap-4">
-          <Card className="flex-1">
+          <Card className="flex-1 hover:shadow-xl hover:scale-105 transition-transform duration-300">
             <CardContent className="p-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -126,7 +125,7 @@ export default function Professores() {
         </div>
 
         {/* Lista de Professores */}
-        <Card>
+        <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300">
           <CardHeader>
             <CardTitle>Todos os Professores ({filteredProfessores.length})</CardTitle>
           </CardHeader>
@@ -140,7 +139,10 @@ export default function Professores() {
             ) : (
               <div className="space-y-4">
                 {filteredProfessores.map((professor) => (
-                  <div key={professor.id} className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div
+                    key={professor.id}
+                    className="p-6 border border-border rounded-lg hover:shadow-xl hover:scale-105 transition-transform duration-300 hover:bg-muted/50 transition-colors"
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">
                         <Avatar className="h-12 w-12">
