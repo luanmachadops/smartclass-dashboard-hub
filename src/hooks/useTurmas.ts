@@ -95,7 +95,9 @@ export function useTurmas() {
     try {
       console.log('Dados da turma para criar:', turmaData)
       
-      // Tentar buscar o school_id do usuário
+      let schoolId: string | null = null;
+
+      // 1. Tentar buscar o school_id do usuário
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('school_id')
@@ -108,10 +110,53 @@ export function useTurmas() {
         return { success: false }
       }
 
-      if (!profileData || !profileData.school_id) {
-        console.error('Usuário sem school_id:', profileData)
-        toast.error("Seu perfil não está associado a uma escola. Entre em contato com o suporte.")
-        return { success: false }
+      schoolId = profileData?.school_id || null;
+
+      // 2. Se o usuário não tiver school_id, tentar corrigir
+      if (!schoolId) {
+        toast.info("Perfil sem escola associada. Tentando associar a uma escola existente...");
+        console.log("Usuário sem school_id. Tentando associar a uma escola existente.");
+
+        // 2a. Buscar a primeira escola disponível
+        const { data: firstSchool, error: schoolError } = await supabase
+          .from('schools')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+
+        if (schoolError) {
+          console.error('Erro ao buscar escolas:', schoolError);
+          toast.error("Ocorreu um erro ao verificar as escolas. Tente novamente.");
+          return { success: false };
+        }
+
+        if (!firstSchool) {
+          console.error('Nenhuma escola encontrada no sistema.');
+          toast.error("Nenhuma escola foi encontrada no sistema. É necessário ter ao menos uma escola para criar turmas. Contate o suporte.");
+          return { success: false };
+        }
+
+        schoolId = firstSchool.id;
+
+        // 2b. Atualizar o perfil do usuário com o school_id
+        const { error: updateProfileError } = await supabase
+          .from('profiles')
+          .update({ school_id: schoolId })
+          .eq('id', user.id);
+
+        if (updateProfileError) {
+          console.error('Erro ao atualizar perfil com school_id:', updateProfileError);
+          toast.error("Não foi possível associar seu perfil a uma escola. Tente novamente ou contate o suporte.");
+          return { success: false };
+        }
+
+        toast.success("Seu perfil foi associado a uma escola! Pode prosseguir.");
+        console.log(`Perfil do usuário ${user.id} atualizado com school_id: ${schoolId}`);
+      }
+      
+      if (!schoolId) {
+        toast.error("Ocorreu um erro inesperado ao obter o ID da escola. Contate o suporte.");
+        return { success: false };
       }
 
       const { data, error } = await supabase
@@ -124,7 +169,7 @@ export function useTurmas() {
           horario_inicio: "00:00",
           horario_fim: "00:00",
           vagas_total: 15, // Valor padrão
-          school_id: profileData.school_id
+          school_id: schoolId
         }])
         .select()
         .single()
