@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -59,7 +58,7 @@ export default function Turmas() {
                   <span>
                     {typeof turma.alunos === "number"
                       ? turma.alunos
-                      : (Array.isArray(turma.alunos) ? turma.alunos.length : "0")} Alunos
+                      : 0} Alunos
                   </span>
                 </div>
               </CardContent>
