@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -19,7 +18,8 @@ import {
   MessageCircle,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from "lucide-react"
 
 interface DashboardLayoutProps {
@@ -30,6 +30,7 @@ interface DashboardLayoutProps {
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Turmas", href: "/turmas", icon: Users },
+  { name: "Cursos", href: "/cursos", icon: BookOpen },
   { name: "Alunos", href: "/alunos", icon: GraduationCap },
   { name: "Professores", href: "/professores", icon: UserCheck },
   { name: "Comunicação", href: "/comunicacao", icon: MessageCircle },

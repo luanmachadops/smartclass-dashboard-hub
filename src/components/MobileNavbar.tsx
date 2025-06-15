@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
@@ -8,12 +7,14 @@ import {
   UserCheck,
   BarChart3,
   DollarSign,
-  MessageCircle
+  MessageCircle,
+  BookOpen
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Turmas", href: "/turmas", icon: Users },
+  { name: "Cursos", href: "/cursos", icon: BookOpen },
   { name: "Alunos", href: "/alunos", icon: GraduationCap },
   { name: "Professores", href: "/professores", icon: UserCheck },
   { name: "Chat", href: "/comunicacao", icon: MessageCircle },
