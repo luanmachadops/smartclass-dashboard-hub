@@ -139,7 +139,7 @@ export function NewConversationModal({ open, onOpenChange, onSelectContact }: Ne
             >
               <GraduationCap className="h-4 w-4 mr-1" />
               Professores
-            </</Button>
+            </Button>
             <Button
               variant={activeFilter === 'turmas' ? 'default' : 'outline'}
               size="sm"
