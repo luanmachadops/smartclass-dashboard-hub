@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
 import { AddAlunoModal } from "@/components/modals/AddAlunoModal"
@@ -96,10 +95,10 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.title}>
+            <Card key={stat.title} className="hover:shadow-xl hover:scale-105 transition-transform duration-300 bg-white bg-opacity-80 dark:bg-gray-900/70">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className={`h-14 w-14 rounded-full flex items-center justify-center ${stat.bgColor}`}>
+                  <div className={`h-14 w-14 rounded-full flex items-center justify-center ${stat.bgColor} shadow-md`}>
                     <stat.icon className={`h-7 w-7 ${stat.color}`} />
                   </div>
                   <div>
@@ -114,7 +113,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Classes */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 hover:shadow-xl hover:scale-105 transition-transform duration-300 bg-white bg-opacity-80 dark:bg-gray-900/70">
             <CardHeader>
               <CardTitle>Turmas Recentes</CardTitle>
             </CardHeader>
@@ -160,7 +159,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Top Instruments */}
-          <Card>
+          <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300 bg-white bg-opacity-80 dark:bg-gray-900/70">
             <CardHeader>
               <CardTitle>Instrumentos Mais Populares</CardTitle>
             </CardHeader>
@@ -187,7 +186,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <Card>
+        <Card className="hover:shadow-xl hover:scale-105 transition-transform duration-300 bg-white bg-opacity-80 dark:bg-gray-900/70">
           <CardHeader>
             <CardTitle>Ações Rápidas</CardTitle>
           </CardHeader>
