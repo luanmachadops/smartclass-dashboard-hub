@@ -69,9 +69,20 @@ export function useAlunos() {
 
       if (error) throw error
 
-      // Atualizar vagas ocupadas da turma
+      // Atualizar vagas ocupadas da turma manualmente
       if (turmaId) {
-        await supabase.rpc('increment_vagas_ocupadas', { turma_id: turmaId })
+        const { data: turmaAtual } = await supabase
+          .from('turmas')
+          .select('vagas_ocupadas')
+          .eq('id', turmaId)
+          .single()
+
+        if (turmaAtual) {
+          await supabase
+            .from('turmas')
+            .update({ vagas_ocupadas: (turmaAtual.vagas_ocupadas || 0) + 1 })
+            .eq('id', turmaId)
+        }
       }
 
       toast.success('Aluno registrado com sucesso!')
