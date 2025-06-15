@@ -38,7 +38,17 @@ export function useAlunos() {
 
       // Transform the data to match our Aluno interface
       const transformedData = data?.map(aluno => ({
-        ...aluno,
+        id: aluno.id,
+        nome: aluno.nome,
+        email: aluno.email,
+        telefone: aluno.telefone,
+        responsavel: aluno.responsavel,
+        telefone_responsavel: aluno.telefone_responsavel,
+        turma_id: aluno.turma_id,
+        ativo: aluno.ativo,
+        foto_url: aluno.foto_url,
+        created_at: aluno.created_at,
+        instrumento: aluno.instrumento,
         turma: aluno.turmas ? { nome: aluno.turmas.nome } : undefined
       })) || []
 
