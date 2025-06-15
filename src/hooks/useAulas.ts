@@ -88,7 +88,7 @@ export function useAulas(turmaId?: string) {
       .from('profiles')
       .select('school_id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (profileError || !profileData?.school_id) {
       console.error('Erro ao buscar perfil da escola:', profileError)
