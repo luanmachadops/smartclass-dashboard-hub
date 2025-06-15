@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,15 +15,20 @@ import {
   MapPin,
   Phone,
   Mail,
-  BookOpen
+  BookOpen,
+  UserCheck
 } from "lucide-react";
 import { MatricularAlunoModal } from "./MatricularAlunoModal";
 import { AdicionarProfessorTurmaModal } from "./AdicionarProfessorTurmaModal";
 import { CriarAulaModal } from "./CriarAulaModal";
 import { useAlunos } from "@/hooks/useAlunos";
 import { useAulas } from "@/hooks/useAulas";
+import { useProfessores } from "@/hooks/useProfessores";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface TurmaDetailsModalProps {
   turma: any;
@@ -36,17 +40,76 @@ export function TurmaDetailsModal({ turma, open, onOpenChange }: TurmaDetailsMod
   const [matricularModalOpen, setMatricularModalOpen] = useState(false);
   const [professorModalOpen, setProfessorModalOpen] = useState(false);
   const [aulaModalOpen, setAulaModalOpen] = useState(false);
+  const [professoresDaTurma, setProfessoresDaTurma] = useState<any[]>([]);
+  const [loadingProfessores, setLoadingProfessores] = useState(false);
+  
   const { alunos, loading: alunosLoading } = useAlunos();
   const { aulas, loading: aulasLoading, refetch: refetchAulas } = useAulas(turma?.id);
+  const { professores } = useProfessores();
 
   if (!turma) return null;
 
   const alunosDaTurma = alunos.filter(aluno => aluno.turma_id === turma.id);
 
-  const handleRefreshData = () => {
-    // Refresh data after any changes
-    refetchAulas();
+  const fetchProfessoresDaTurma = async () => {
+    if (!turma?.id) return;
+    
+    setLoadingProfessores(true);
+    try {
+      const { data, error } = await supabase
+        .from('turma_professores')
+        .select(`
+          professor_id,
+          professores (
+            id,
+            nome,
+            email,
+            telefone,
+            especialidades
+          )
+        `)
+        .eq('turma_id', turma.id);
+
+      if (error) throw error;
+
+      const professoresData = data?.map(tp => tp.professores).filter(Boolean) || [];
+      setProfessoresDaTurma(professoresData);
+    } catch (error) {
+      console.error('Erro ao carregar professores da turma:', error);
+      toast.error('Erro ao carregar professores da turma');
+    } finally {
+      setLoadingProfessores(false);
+    }
   };
+
+  const handleRemoverProfessor = async (professorId: string) => {
+    try {
+      const { error } = await supabase
+        .from('turma_professores')
+        .delete()
+        .eq('turma_id', turma.id)
+        .eq('professor_id', professorId);
+
+      if (error) throw error;
+
+      toast.success('Professor removido da turma com sucesso!');
+      fetchProfessoresDaTurma();
+    } catch (error) {
+      console.error('Erro ao remover professor:', error);
+      toast.error('Erro ao remover professor da turma');
+    }
+  };
+
+  const handleRefreshData = () => {
+    refetchAulas();
+    fetchProfessoresDaTurma();
+  };
+
+  useEffect(() => {
+    if (open && turma?.id) {
+      fetchProfessoresDaTurma();
+    }
+  }, [open, turma?.id]);
 
   return (
     <>
@@ -226,18 +289,82 @@ export function TurmaDetailsModal({ turma, open, onOpenChange }: TurmaDetailsMod
 
             <TabsContent value="professores" className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Professores</h3>
+                <h3 className="text-lg font-medium">Professores da Turma</h3>
                 <Button onClick={() => setProfessorModalOpen(true)} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Professor
                 </Button>
               </div>
               
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Funcionalidade em desenvolvimento</p>
-                <p className="text-sm">Lista de professores será implementada em breve</p>
-              </div>
+              {loadingProfessores ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Carregando professores...
+                </div>
+              ) : professoresDaTurma.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum professor adicionado</p>
+                  <Button onClick={() => setProfessorModalOpen(true)} variant="outline" className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar primeiro professor
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {professoresDaTurma.map((professor) => (
+                    <Card key={professor.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white font-semibold">
+                                {professor.nome.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <h4 className="font-medium">{professor.nome}</h4>
+                              <div className="space-y-1 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                  <Mail className="h-3 w-3" />
+                                  <span>{professor.email}</span>
+                                </div>
+                                {professor.telefone && (
+                                  <div className="flex items-center gap-2">
+                                    <Phone className="h-3 w-3" />
+                                    <span>{professor.telefone}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {professor.especialidades && professor.especialidades.length > 0 && (
+                                <div className="flex gap-1 mt-2">
+                                  {professor.especialidades.slice(0, 3).map((esp: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {esp}
+                                    </Badge>
+                                  ))}
+                                  {professor.especialidades.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{professor.especialidades.length - 3}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoverProfessor(professor.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </DialogContent>
