@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -6,14 +5,24 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, Mail, Phone, Users, GraduationCap, CalendarDays, Plus, MessageCircle, Music } from "lucide-react"
+import { Search, Mail, Phone, Users, GraduationCap, CalendarDays, Plus, MessageCircle, Music, MapPin, User } from "lucide-react"
 import { useAlunos } from "@/hooks/useAlunos"
 import { AddAlunoModal } from "@/components/modals/AddAlunoModal"
+import { AlunoDetails } from "@/components/details/AlunoDetails"
 import { useState } from "react"
 
 export default function Alunos() {
   const { alunos, loading } = useAlunos()
   const [searchTerm, setSearchTerm] = useState("")
+
+  const getInitials = (nome: string) => {
+    return nome
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2)
+  }
 
   const filteredAlunos = alunos.filter(aluno =>
     aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,8 +33,7 @@ export default function Alunos() {
 
   const alunosAtivos = alunos.filter(a => a.ativo)
   
-  // Calcular presença média real (por enquanto simulado, pois precisaríamos dos dados de chamada)
-  // TODO: Implementar cálculo real quando dados de presença estiverem disponíveis
+  // Calcular presença média simulada
   const presencaMedia = alunos.length > 0 ? Math.round(Math.random() * 20 + 80) : 0
 
   const estatisticas = [
@@ -157,145 +165,150 @@ export default function Alunos() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredAlunos.map((aluno) => (
-                  <div key={aluno.id} className="group p-6 backdrop-blur-sm bg-white/60 dark:bg-gray-700/60 rounded-2xl border border-white/30 hover:bg-white/80 dark:hover:bg-gray-700/80 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-5 flex-1">
-                        <Avatar className="h-14 w-14 ring-2 ring-white/50 shadow-lg">
-                          <AvatarImage src={aluno.foto_url || "/placeholder.svg"} />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-semibold text-lg">
-                            {aluno.nome.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
+                  <div key={aluno.id} className="group p-6 backdrop-blur-sm bg-white/60 dark:bg-gray-700/60 rounded-2xl border border-white/30 hover:bg-white/80 dark:hover:bg-gray-700/80 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <div className="flex items-start gap-4">
+                      <Avatar className="h-16 w-16 ring-2 ring-white/50 shadow-lg">
+                        <AvatarImage src={aluno.foto_url || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-bold text-lg">
+                          {getInitials(aluno.nome)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate">{aluno.nome}</h3>
+                          <Badge 
+                            variant={aluno.ativo ? "default" : "secondary"}
+                            className={`${
+                              aluno.ativo 
+                                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0" 
+                                : "bg-gray-100 text-gray-600 border-gray-200"
+                            } px-3 py-1 rounded-full font-medium shadow-sm`}
+                          >
+                            {aluno.ativo ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </div>
                         
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{aluno.nome}</h3>
-                            <Badge 
-                              variant={aluno.ativo ? "default" : "secondary"}
-                              className={`${
-                                aluno.ativo 
-                                  ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0" 
-                                  : "bg-gray-100 text-gray-600 border-gray-200"
-                              } px-3 py-1 rounded-full font-medium shadow-sm`}
-                            >
-                              {aluno.ativo ? "Ativo" : "Inativo"}
-                            </Badge>
-                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30">
+                        <div className="space-y-3">
+                          {aluno.instrumento && (
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
+                                <Music className="h-4 w-4 text-orange-600" />
+                              </div>
+                              <span className="font-semibold text-orange-700 dark:text-orange-400">{aluno.instrumento}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                              <GraduationCap className="h-4 w-4 text-purple-600" />
+                            </div>
+                            <span className="font-semibold text-purple-700 dark:text-purple-400">
+                              {aluno.turma?.nome || 'Sem turma'}
+                            </span>
+                          </div>
+
+                          {aluno.email && (
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                <Mail className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{aluno.email}</span>
+                            </div>
+                          )}
+                          
+                          {aluno.telefone && (
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <Phone className="h-4 w-4 text-emerald-600" />
+                              </div>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">{aluno.telefone}</span>
+                            </div>
+                          )}
+
+                          {aluno.endereco && (
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-900/30 flex items-center justify-center">
+                                <MapPin className="h-4 w-4 text-gray-600" />
+                              </div>
+                              <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{aluno.endereco}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-900/30 flex items-center justify-center">
+                              <CalendarDays className="h-4 w-4 text-gray-600" />
+                            </div>
+                            <div>
+                              <span className="text-sm text-gray-500">Cadastro: </span>
+                              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                {aluno.created_at ? new Date(aluno.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Frequência simulada */}
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
                               <CalendarDays className="h-4 w-4 text-amber-600" />
-                              <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                            </div>
+                            <div>
+                              <span className="text-sm text-gray-500">Presença: </span>
+                              <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
                                 {Math.round(Math.random() * 20 + 75)}%
                               </span>
                             </div>
                           </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                            {aluno.instrumento && (
-                              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                <div className="h-8 w-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
-                                  <Music className="h-4 w-4 text-orange-600" />
-                                </div>
-                                <span className="font-medium">{aluno.instrumento}</span>
-                              </div>
-                            )}
+                        </div>
 
-                            {aluno.email && (
-                              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                                  <Mail className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <span className="font-medium">{aluno.email}</span>
-                              </div>
-                            )}
-                            
-                            {aluno.telefone && (
-                              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                                  <Phone className="h-4 w-4 text-emerald-600" />
-                                </div>
-                                <a 
-                                  href={`https://wa.me/55${aluno.telefone.replace(/\D/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="font-medium hover:text-emerald-600 transition-colors"
-                                >
-                                  {aluno.telefone}
-                                </a>
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center gap-3 text-sm">
-                              <div className="h-8 w-8 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
-                                <GraduationCap className="h-4 w-4 text-purple-600" />
-                              </div>
-                              <span className="font-semibold text-purple-700 dark:text-purple-400">
-                                {aluno.turma?.nome || 'Sem turma'}
-                              </span>
+                        {aluno.responsavel && (
+                          <div className="mt-4 text-sm bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
+                            <div className="flex items-center gap-2 mb-1">
+                              <User className="h-4 w-4 text-gray-500" />
+                              <span className="text-gray-500">Responsável:</span>
                             </div>
-
-                            <div className="text-sm">
-                              <span className="text-gray-500">Cadastro: </span>
-                              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                {new Date(aluno.created_at || '').toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
-                          </div>
-
-                          {aluno.responsavel && (
-                            <div className="text-sm bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 backdrop-blur-sm">
-                              <span className="text-gray-500">Responsável: </span>
-                              <span className="font-semibold text-gray-700 dark:text-gray-300">{aluno.responsavel}</span>
+                            <div className="ml-6">
+                              <p className="font-semibold text-gray-700 dark:text-gray-300">{aluno.responsavel}</p>
                               {aluno.telefone_responsavel && (
-                                <>
-                                  <span className="text-gray-500 ml-4">Tel: </span>
-                                  <a 
-                                    href={`https://wa.me/55${aluno.telefone_responsavel.replace(/\D/g, '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-                                  >
-                                    {aluno.telefone_responsavel}
-                                  </a>
-                                </>
+                                <p className="text-gray-600 dark:text-gray-400">Tel: {aluno.telefone_responsavel}</p>
                               )}
                             </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {aluno.telefone && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 rounded-xl"
-                            asChild
-                          >
-                            <a 
-                              href={`https://wa.me/55${aluno.telefone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <MessageCircle className="h-4 w-4 mr-2" />
-                              WhatsApp
-                            </a>
-                          </Button>
+                          </div>
                         )}
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 rounded-xl"
-                        >
-                          Ver Detalhes
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 rounded-xl"
-                        >
-                          Editar
-                        </Button>
+
+                        <div className="flex items-center gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          {aluno.telefone && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 rounded-xl"
+                              asChild
+                            >
+                              <a 
+                                href={`https://wa.me/55${aluno.telefone.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <MessageCircle className="h-4 w-4 mr-1" />
+                                WhatsApp
+                              </a>
+                            </Button>
+                          )}
+                          <AlunoDetails
+                            aluno={aluno}
+                            trigger={
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 rounded-xl"
+                              >
+                                Ver Detalhes
+                              </Button>
+                            }
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
