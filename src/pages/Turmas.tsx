@@ -40,13 +40,18 @@ export default function Turmas() {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>{typeof turma.dia === "string" ? turma.dia : (turma.dia_semana || "—")}</span>
+                  <span>{turma.dia_semana || "—"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span>
-                    {(typeof turma.horario_inicio === "string" ? turma.horario_inicio : (turma.horario_inicio?.toString() ?? "—"))} - 
-                    {(typeof turma.horario_fim === "string" ? turma.horario_fim : (turma.horario_fim?.toString() ?? "—"))}
+                    {typeof turma.horario_inicio === "string" 
+                      ? turma.horario_inicio 
+                      : (turma.horario_inicio ? String(turma.horario_inicio) : "—")}
+                     - 
+                    {typeof turma.horario_fim === "string"
+                      ? turma.horario_fim 
+                      : (turma.horario_fim ? String(turma.horario_fim) : "—")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
