@@ -71,20 +71,27 @@ export function AddAlunoModal({
     }
     setLoading(false);
   };
-  const instrumentos = ["Piano", "Violão", "Guitarra", "Baixo", "Bateria", "Violino", "Violoncelo", "Flauta", "Saxofone", "Trompete", "Trombone", "Clarinete", "Canto", "Ukulele", "Teclado", "Harmônica"];
+  const instrumentos = [
+    "Piano", "Violão", "Guitarra", "Baixo", "Bateria", "Violino", "Violoncelo",
+    "Flauta", "Saxofone", "Trompete", "Trombone", "Clarinete", "Canto", "Ukulele",
+    "Teclado", "Harmônica"
+  ];
   return <>
-      <Dialog open={open} onOpenChange={(state) => setOpen(state)}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           {trigger}
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px] animate-fade-in animate-duration-300" style={{
-        animation: open ? 'fade-in 0.4s both' : 'fade-out 0.4s both'
-      }}>
+        <DialogContent
+          className="sm:max-w-[500px] animate-fade-in animate-duration-300"
+          style={{
+            animation: open ? 'fade-in 0.4s both' : 'fade-out 0.4s both'
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Registrar Novo Aluno</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ANIMAÇÃO DE FOTO */}
+            {/* FOTO */}
             <div className="flex flex-col items-center space-y-4 transition-transform duration-300 animate-scale-in">
               <div className="relative">
                 <Avatar className="h-20 w-20 ring-2 ring-gray-200">
@@ -96,15 +103,20 @@ export function AddAlunoModal({
               </div>
               <div>
                 <Label htmlFor="foto" className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-300 transition-colors">
-                    <Upload className="h-4 w-4" />
-                    <span className="text-sm font-medium">Escolher Foto</span>
+                  <div className="flex items-center gap-2 px-4 py-2 
+                    bg-white border-2 border-dashed border-gray-300
+                    rounded-lg transition-colors
+                    hover:bg-blue-50 hover:border-blue-400
+                    active:bg-blue-100"
+                  >
+                    <Upload className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm font-medium text-gray-700">Escolher Foto</span>
                   </div>
                 </Label>
                 <Input id="foto" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
               </div>
             </div>
-
+            {/* Nome */}
             <div>
               <Label htmlFor="nome">Nome Completo *</Label>
               <Input id="nome" value={formData.nome} onChange={e => setFormData({
@@ -112,7 +124,7 @@ export function AddAlunoModal({
               nome: e.target.value
             })} placeholder="Nome do aluno" required />
             </div>
-
+            {/* Instrumento */}
             <div>
               <Label htmlFor="instrumento">Instrumento</Label>
               <Select onValueChange={value => setFormData({
@@ -129,7 +141,7 @@ export function AddAlunoModal({
                 </SelectContent>
               </Select>
             </div>
-
+            {/* Email e Telefone */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="email">Email</Label>
@@ -146,7 +158,7 @@ export function AddAlunoModal({
               })} placeholder="(11) 99999-9999" />
               </div>
             </div>
-
+            {/* Turma */}
             <div>
               <Label htmlFor="turma">Turma</Label>
               <Select onValueChange={value => setFormData({
@@ -163,7 +175,7 @@ export function AddAlunoModal({
                 </SelectContent>
               </Select>
             </div>
-
+            {/* Responsável */}
             <div>
               <Label htmlFor="responsavel">Responsável</Label>
               <Input id="responsavel" value={formData.responsavel} onChange={e => setFormData({
@@ -171,7 +183,7 @@ export function AddAlunoModal({
               responsavel: e.target.value
             })} placeholder="Nome do responsável" />
             </div>
-
+            {/* Telefone Responsável */}
             <div>
               <Label htmlFor="telefoneResponsavel">Telefone do Responsável</Label>
               <Input id="telefoneResponsavel" value={formData.telefoneResponsavel} onChange={e => setFormData({
@@ -179,12 +191,21 @@ export function AddAlunoModal({
               telefoneResponsavel: e.target.value
             })} placeholder="(11) 99999-9999" />
             </div>
-
+            {/* Botões */}
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="rounded-xl border-slate-300 text-gray-700 hover:bg-gray-100"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading} className={`relative overflow-hidden ${loading ? "animate-pulse" : "hover:shadow-lg hover:scale-105 transition-transform"}`}>
+              <Button
+                type="submit"
+                disabled={loading}
+                className={`relative overflow-hidden ${loading ? "animate-pulse" : "hover:shadow-lg hover:scale-105 transition-transform rounded-xl"}`}
+              >
                 {loading ? "Registrando..." : "Registrar Aluno"}
               </Button>
             </div>
