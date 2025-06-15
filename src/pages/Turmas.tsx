@@ -40,21 +40,21 @@ export default function Turmas() {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>{("dia" in turma && turma.dia) ? turma.dia : "—"}</span>
+                  <span>{typeof turma.dia === "string" ? turma.dia : (turma.dia_semana || "—")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span>
-                    {("horario_inicio" in turma && turma.horario_inicio) ? turma.horario_inicio : "—"} - 
-                    {("horario_fim" in turma && turma.horario_fim) ? turma.horario_fim : "—"}
+                    {(typeof turma.horario_inicio === "string" ? turma.horario_inicio : (turma.horario_inicio?.toString() ?? "—"))} - 
+                    {(typeof turma.horario_fim === "string" ? turma.horario_fim : (turma.horario_fim?.toString() ?? "—"))}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
                   <span>
-                    {("alunos" in turma && turma.alunos !== undefined)
+                    {typeof turma.alunos === "number"
                       ? turma.alunos
-                      : "0"} Alunos
+                      : (Array.isArray(turma.alunos) ? turma.alunos.length : "0")} Alunos
                   </span>
                 </div>
               </CardContent>
