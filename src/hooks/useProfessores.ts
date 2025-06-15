@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -15,6 +14,9 @@ interface Professor {
   user_id: string | null
   created_at: string
   updated_at: string
+  avaliacao_media?: number
+  total_aulas?: number
+  presenca_media?: number
 }
 
 export function useProfessores() {
