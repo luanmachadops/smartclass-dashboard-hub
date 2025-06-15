@@ -104,6 +104,76 @@ export type Database = {
           },
         ]
       }
+      conversation_participants: {
+        Row: {
+          conversation_id: string | null
+          id: string
+          joined_at: string | null
+          last_read_at: string | null
+          profile_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          id?: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          profile_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          id?: string
+          joined_at?: string | null
+          last_read_at?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          group_chat_class_id: string | null
+          id: string
+          is_group_chat: boolean | null
+          school_id: string
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_chat_class_id?: string | null
+          id?: string
+          is_group_chat?: boolean | null
+          school_id: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_chat_class_id?: string | null
+          id?: string
+          is_group_chat?: boolean | null
+          school_id?: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_group_chat_class_id_fkey"
+            columns: ["group_chat_class_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro: {
         Row: {
           aluno_id: string | null
@@ -169,6 +239,129 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messages: {
+        Row: {
+          attachment_file_name: string | null
+          attachment_file_url: string | null
+          attachment_type: string | null
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          poll_id: string | null
+          sender_profile_id: string
+          text_content: string | null
+        }
+        Insert: {
+          attachment_file_name?: string | null
+          attachment_file_url?: string | null
+          attachment_type?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          poll_id?: string | null
+          sender_profile_id: string
+          text_content?: string | null
+        }
+        Update: {
+          attachment_file_name?: string | null
+          attachment_file_url?: string | null
+          attachment_type?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          poll_id?: string | null
+          sender_profile_id?: string
+          text_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_options: {
+        Row: {
+          created_at: string | null
+          id: string
+          poll_id: string | null
+          text: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          poll_id?: string | null
+          text: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          poll_id?: string | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          poll_option_id: string | null
+          voter_profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          poll_option_id?: string | null
+          voter_profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          poll_option_id?: string | null
+          voter_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_option_id_fkey"
+            columns: ["poll_option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          created_at: string | null
+          id: string
+          question: string
+          school_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question: string
+          school_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question?: string
+          school_id?: string
+        }
+        Relationships: []
       }
       presencas: {
         Row: {

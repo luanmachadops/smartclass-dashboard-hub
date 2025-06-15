@@ -11,6 +11,7 @@ import Alunos from "@/pages/Alunos"
 import Professores from "@/pages/Professores"
 import Relatorios from "@/pages/Relatorios"
 import Financeiro from "@/pages/Financeiro"
+import Comunicacao from "@/pages/Comunicacao"
 import NotFound from "@/pages/NotFound"
 import { Toaster } from "@/components/ui/sonner"
 import "./App.css"
@@ -53,6 +54,11 @@ function App() {
             <Route path="/financeiro" element={
               <ProtectedRoute>
                 <Financeiro />
+              </ProtectedRoute>
+            } />
+            <Route path="/comunicacao" element={
+              <ProtectedRoute>
+                <Comunicacao />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

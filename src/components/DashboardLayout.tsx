@@ -15,6 +15,7 @@ import {
   UserCheck,
   BarChart3,
   DollarSign,
+  MessageCircle,
   LogOut
 } from "lucide-react"
 
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Turmas", href: "/turmas", icon: Users },
   { name: "Alunos", href: "/alunos", icon: GraduationCap },
   { name: "Professores", href: "/professores", icon: UserCheck },
+  { name: "Comunicação", href: "/comunicacao", icon: MessageCircle },
   { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
   { name: "Financeiro", href: "/financeiro", icon: DollarSign },
 ]
