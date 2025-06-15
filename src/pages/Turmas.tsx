@@ -2,10 +2,10 @@
 import { useState } from "react"
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { TurmaCard } from "@/components/TurmaCard"
+import { TurmaDetailsModal } from "@/components/modals/TurmaDetailsModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Calendar, Clock, Users, TrendingUp, Search, Plus } from "lucide-react"
 import { useTurmas } from "@/hooks/useTurmas"
@@ -14,6 +14,8 @@ import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
 export default function Turmas() {
   const { turmas, loading, deleteTurma } = useTurmas()
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedTurma, setSelectedTurma] = useState(null)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
 
   const filteredTurmas = turmas.filter(turma =>
     turma.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,13 +31,10 @@ export default function Turmas() {
     ? Math.round(turmas.reduce((acc, t) => acc + (t.presenca || 0), 0) / turmas.length)
     : 0
 
-  // Calcular taxa de ocupação real
-  const totalVagas = turmas.reduce((acc, t) => acc + (t.vagas_total || 0), 0)
-  const vagasOcupadas = turmas.reduce((acc, t) => acc + (t.alunos || 0), 0)
-  const taxaOcupacao = totalVagas > 0 ? Math.round((vagasOcupadas / totalVagas) * 100) : 0
-
   const handleViewDetails = (turma: any) => {
     console.log('Visualizar detalhes da turma:', turma.nome)
+    setSelectedTurma(turma)
+    setDetailsModalOpen(true)
   }
 
   if (loading) {
@@ -68,6 +67,28 @@ export default function Turmas() {
   return (
     <DashboardLayout title="Turmas">
       <div className="p-6 lg:p-8 space-y-6">
+        {/* Barra de ações */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar turmas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <AddTurmaModal
+            trigger={
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Adicionar Turma
+              </Button>
+            }
+          />
+        </div>
+
         {/* Cards de estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="hover:shadow-lg transition-shadow">
@@ -115,34 +136,16 @@ export default function Turmas() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{taxaOcupacao}%</div>
+              <div className="text-2xl font-bold">
+                {turmas.reduce((acc, t) => acc + (t.vagas_total || 15), 0) > 0 
+                  ? Math.round((totalAlunos / turmas.reduce((acc, t) => acc + (t.vagas_total || 15), 0)) * 100)
+                  : 0}%
+              </div>
               <p className="text-xs text-muted-foreground">
-                {vagasOcupadas} de {totalVagas} vagas
+                {totalAlunos} de {turmas.reduce((acc, t) => acc + (t.vagas_total || 15), 0)} vagas
               </p>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Barra de ações */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar turmas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <AddTurmaModal
-            trigger={
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Adicionar Turma
-              </Button>
-            }
-          />
         </div>
 
         {/* Grid de turmas */}
@@ -183,6 +186,13 @@ export default function Turmas() {
             </CardContent>
           </Card>
         )}
+
+        {/* Modal de Detalhes */}
+        <TurmaDetailsModal
+          turma={selectedTurma}
+          open={detailsModalOpen}
+          onOpenChange={setDetailsModalOpen}
+        />
       </div>
     </DashboardLayout>
   )
