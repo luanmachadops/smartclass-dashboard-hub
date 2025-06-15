@@ -1,3 +1,4 @@
+
 import { DashboardLayout } from "@/components/DashboardLayout"
 import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
 import { AddAlunoModal } from "@/components/modals/AddAlunoModal"
@@ -5,53 +6,89 @@ import { ChamadaModal } from "@/components/modals/ChamadaModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
-import { GraduationCap, Users, UserCheck, CheckCircle, Plus } from "lucide-react"
+import { GraduationCap, Users, UserCheck, CheckCircle } from "lucide-react"
+import { useTurmas } from "@/hooks/useTurmas"
+import { useAlunos } from "@/hooks/useAlunos"
+import { useProfessores } from "@/hooks/useProfessores"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Dashboard() {
+  const { turmas, loading: turmasLoading } = useTurmas()
+  const { alunos, loading: alunosLoading } = useAlunos()
+  const { professores, loading: professoresLoading } = useProfessores()
+
+  const loading = turmasLoading || alunosLoading || professoresLoading
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Resumo da Escola">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <Skeleton className="h-20 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   const stats = [
     {
       title: "Total de Alunos",
-      value: "128",
+      value: alunos.length.toString(),
       icon: GraduationCap,
       color: "text-blue-600",
       bgColor: "bg-blue-100 dark:bg-blue-900/50"
     },
     {
       title: "Total de Turmas", 
-      value: "12",
+      value: turmas.length.toString(),
       icon: Users,
       color: "text-indigo-600",
       bgColor: "bg-indigo-100 dark:bg-indigo-900/50"
     },
     {
       title: "Professores Ativos",
-      value: "8", 
+      value: professores.filter(p => p.ativo).length.toString(), 
       icon: UserCheck,
       color: "text-emerald-600",
       bgColor: "bg-emerald-100 dark:bg-emerald-900/50"
     },
     {
       title: "Média de Presença",
-      value: "92%",
+      value: turmas.length > 0 ? `${Math.round(turmas.reduce((acc, t) => acc + (t.presenca || 0), 0) / turmas.length)}%` : "0%",
       icon: CheckCircle,
       color: "text-rose-600", 
       bgColor: "bg-rose-100 dark:bg-rose-900/50"
     }
   ]
 
-  const recentClasses = [
-    { name: "Violão Iniciante", time: "14:00", students: 12, attendance: 92, professores: ["Carlos Silva"] },
-    { name: "Piano Intermediário", time: "15:30", students: 8, attendance: 88, professores: ["Ana Costa"] },
-    { name: "Bateria Avançado", time: "16:00", students: 6, attendance: 100, professores: ["João Santos"] },
-    { name: "Canto Popular", time: "17:00", students: 10, attendance: 80, professores: ["Maria Oliveira"] }
-  ]
+  const recentClasses = turmas.slice(0, 4).map(turma => ({
+    name: turma.nome,
+    time: `${turma.horario_inicio} - ${turma.horario_fim}`,
+    students: turma.alunos || 0,
+    attendance: turma.presenca || 0,
+    professores: turma.professores || []
+  }))
 
-  const topInstruments = [
-    { name: "Violão", classes: 5, percentage: 42 },
-    { name: "Piano", classes: 3, percentage: 25 },
-    { name: "Bateria", classes: 2, percentage: 17 },
-    { name: "Canto", classes: 2, percentage: 17 }
-  ]
+  const instrumentCounts = turmas.reduce((acc, turma) => {
+    acc[turma.instrumento] = (acc[turma.instrumento] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  const topInstruments = Object.entries(instrumentCounts)
+    .map(([name, classes]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      classes,
+      percentage: Math.round((classes / turmas.length) * 100)
+    }))
+    .sort((a, b) => b.classes - a.classes)
+    .slice(0, 4)
 
   return (
     <DashboardLayout title="Resumo da Escola">
@@ -82,37 +119,43 @@ export default function Dashboard() {
               <CardTitle>Turmas Recentes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentClasses.map((classItem, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="font-semibold text-foreground">{classItem.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {classItem.time} • {classItem.students} alunos
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-foreground">{classItem.attendance}%</p>
-                        <p className="text-xs text-muted-foreground">Presença</p>
+              {recentClasses.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Nenhuma turma encontrada</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentClasses.map((classItem, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                      <div>
+                        <p className="font-semibold text-foreground">{classItem.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {classItem.time} • {classItem.students} alunos
+                        </p>
                       </div>
-                      <ChamadaModal
-                        trigger={
-                          <Button size="sm" variant="outline">
-                            Chamada
-                          </Button>
-                        }
-                        turma={{
-                          nome: classItem.name,
-                          horario: classItem.time,
-                          dia: "Hoje",
-                          professores: classItem.professores
-                        }}
-                      />
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-foreground">{classItem.attendance}%</p>
+                          <p className="text-xs text-muted-foreground">Presença</p>
+                        </div>
+                        <ChamadaModal
+                          trigger={
+                            <Button size="sm" variant="outline">
+                              Chamada
+                            </Button>
+                          }
+                          turma={{
+                            nome: classItem.name,
+                            horario: classItem.time,
+                            dia: "Hoje",
+                            professores: classItem.professores
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -122,17 +165,23 @@ export default function Dashboard() {
               <CardTitle>Instrumentos Mais Populares</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {topInstruments.map((instrument, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-foreground">{instrument.name}</span>
-                      <span className="text-muted-foreground">{instrument.classes} turmas</span>
+              {topInstruments.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Nenhum dado disponível</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {topInstruments.map((instrument, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-foreground">{instrument.name}</span>
+                        <span className="text-muted-foreground">{instrument.classes} turmas</span>
+                      </div>
+                      <Progress value={instrument.percentage} className="h-2" />
                     </div>
-                    <Progress value={instrument.percentage} className="h-2" />
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

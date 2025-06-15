@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Plus, X } from "lucide-react"
+import { X } from "lucide-react"
+import { useTurmas } from "@/hooks/useTurmas"
+import { useProfessores } from "@/hooks/useProfessores"
 
 interface AddTurmaModalProps {
   trigger: React.ReactNode
@@ -14,6 +16,10 @@ interface AddTurmaModalProps {
 
 export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
   const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const { createTurma } = useTurmas()
+  const { professores } = useProfessores()
+  
   const [formData, setFormData] = useState({
     nome: "",
     instrumento: "",
@@ -23,10 +29,6 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
     professores: [] as string[],
     maxAlunos: ""
   })
-
-  const professoresDisponiveis = [
-    "Carlos Silva", "Ana Costa", "João Santos", "Maria Oliveira", "Pedro Lima"
-  ]
 
   const handleAddProfessor = (professor: string) => {
     if (!formData.professores.includes(professor)) {
@@ -44,19 +46,26 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Nova turma:", formData)
-    setOpen(false)
-    setFormData({
-      nome: "",
-      instrumento: "",
-      nivel: "",
-      horario: "",
-      dia: "",
-      professores: [],
-      maxAlunos: ""
-    })
+    setLoading(true)
+    
+    const result = await createTurma(formData)
+    
+    if (result.success) {
+      setOpen(false)
+      setFormData({
+        nome: "",
+        instrumento: "",
+        nivel: "",
+        horario: "",
+        dia: "",
+        professores: [],
+        maxAlunos: ""
+      })
+    }
+    
+    setLoading(false)
   }
 
   return (
@@ -133,12 +142,12 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="segunda">Segunda-feira</SelectItem>
-                  <SelectItem value="terca">Terça-feira</SelectItem>
-                  <SelectItem value="quarta">Quarta-feira</SelectItem>
-                  <SelectItem value="quinta">Quinta-feira</SelectItem>
-                  <SelectItem value="sexta">Sexta-feira</SelectItem>
-                  <SelectItem value="sabado">Sábado</SelectItem>
+                  <SelectItem value="Segunda-feira">Segunda-feira</SelectItem>
+                  <SelectItem value="Terça-feira">Terça-feira</SelectItem>
+                  <SelectItem value="Quarta-feira">Quarta-feira</SelectItem>
+                  <SelectItem value="Quinta-feira">Quinta-feira</SelectItem>
+                  <SelectItem value="Sexta-feira">Sexta-feira</SelectItem>
+                  <SelectItem value="Sábado">Sábado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -161,9 +170,9 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
                 <SelectValue placeholder="Adicionar professor" />
               </SelectTrigger>
               <SelectContent>
-                {professoresDisponiveis.map((professor) => (
-                  <SelectItem key={professor} value={professor}>
-                    {professor}
+                {professores.map((professor) => (
+                  <SelectItem key={professor.id} value={professor.nome}>
+                    {professor.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -185,7 +194,9 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Criar Turma</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Criando..." : "Criar Turma"}
+            </Button>
           </div>
         </form>
       </DialogContent>
