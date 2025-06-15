@@ -51,7 +51,6 @@ const Comunicacao: React.FC = () => {
 
   const handleCreatePoll = async (pollData: { question: string; options: string[] }) => {
     if (!user) return
-    // Assumindo que você tem acesso ao schoolId do usuário
     const schoolId = user.user_metadata?.school_id || 'default-school-id'
     await createPoll(pollData.question, pollData.options, schoolId)
   }
@@ -60,7 +59,7 @@ const Comunicacao: React.FC = () => {
 
   return (
     <DashboardLayout title="Comunicação">
-      <div className="p-6 lg:p-8">
+      <div className="max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-[calc(100vh-12rem)] flex bg-card rounded-lg border overflow-hidden">
           {/* Lista de conversas - hidden em mobile quando chat está ativo */}
           {(!isMobile || !isMobileChatView) && (
