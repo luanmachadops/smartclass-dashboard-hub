@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '@/integrations/supabase/client'
-import { toast } from 'sonner'
-import { useAuth } from '@/contexts/AuthContext'
+
+import { useEffect, useState } from "react"
+import { supabase } from "@/integrations/supabase/client"
+import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 
 export interface Turma {
   id: string
@@ -12,13 +13,16 @@ export interface Turma {
   horario_inicio: string
   horario_fim: string
   valor_mensal: number | null
-  vagas_total: number
-  vagas_ocupadas: number
   ativa: boolean
-  professores?: string[]
+  vagas_ocupadas: number
+  vagas_total: number
+  curso_id: string | null
+  created_at: string
+  updated_at: string
+  school_id: string
   alunos?: number
   presenca?: number
-  curso_id?: string
+  professores?: string[]
 }
 
 export function useTurmas() {
@@ -27,10 +31,10 @@ export function useTurmas() {
   const { user } = useAuth()
 
   const fetchTurmas = async () => {
-    console.log('🔍 Iniciando busca de turmas...')
-    console.log('👤 Usuário atual:', user?.id)
-    
     try {
+      setLoading(true)
+      console.log('🔍 Buscando turmas...')
+      
       // Verificar school_id do usuário
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -45,173 +49,92 @@ export function useTurmas() {
         throw new Error('Não foi possível identificar sua escola')
       }
 
+      const schoolId = profileData.school_id
+
       const { data, error } = await supabase
-        .from('turmas')
-        .select(`
-          *,
-          turma_professores (
-            professores (nome)
-          ),
-          alunos (id),
-          chamadas (
-            id,
-            presencas (presente)
-          )
-        `)
+        .from("turmas")
+        .select("*")
+        .eq('school_id', schoolId) // FILTRO ADICIONADO AQUI!
         .order('created_at', { ascending: false })
-
-      console.log('📚 Dados das turmas recebidos:', data)
-      console.log('❌ Erro na busca de turmas:', error)
-
-      if (error) throw error
-
-      const turmasFormatadas = data?.map(turma => {
-        // Calcular presença média real
-        const todasChamadas = turma.chamadas || []
-        let totalPresencas = 0
-        let totalAulas = 0
-
-        todasChamadas.forEach((chamada: any) => {
-          const presencasAula = chamada.presencas || []
-          if (presencasAula.length > 0) {
-            totalAulas++
-            const presentes = presencasAula.filter((p: any) => p.presente).length
-            const totalAlunos = presencasAula.length
-            if (totalAlunos > 0) {
-              totalPresencas += (presentes / totalAlunos) * 100
-            }
-          }
-        })
-
-        const presencaMedia = totalAulas > 0 ? Math.round(totalPresencas / totalAulas) : 0
-        const numeroAlunos = turma.alunos?.length || 0
-
-        return {
-          ...turma,
-          professores: turma.turma_professores?.map((tp: any) => tp.professores.nome) || [],
-          alunos: numeroAlunos,
-          presenca: presencaMedia,
-          vagas_total: turma.vagas_total || 15,
-          vagas_ocupadas: numeroAlunos
-        }
-      }) || []
-
-      setTurmas(turmasFormatadas)
-      console.log('✅ Turmas processadas:', turmasFormatadas.length)
+      
+      if (error) {
+        console.error('Erro ao buscar turmas:', error)
+        throw error
+      }
+      
+      console.log('🎯 Turmas carregadas para a escola:', schoolId, data)
+      setTurmas(data || [])
     } catch (error) {
-      console.error('❌ Erro ao buscar turmas:', error)
+      console.error('❌ Erro no fetchTurmas:', error)
       toast.error(`Erro ao carregar turmas: ${error.message}`)
     } finally {
       setLoading(false)
     }
   }
 
-  const createTurma = async (turmaData: any) => {
+  const addTurma = async (turmaData: any) => {
     if (!user) {
-      toast.error("É necessário estar autenticado para criar uma turma.")
+      toast.error("É necessário estar autenticado para adicionar uma turma.")
+      return { success: false }
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('school_id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileError || !profileData?.school_id) {
+      console.error('Erro ao buscar perfil da escola:', profileError)
+      toast.error("Não foi possível identificar sua escola para adicionar a turma.")
       return { success: false }
     }
 
     try {
-      console.log('Dados da turma para criar:', turmaData)
+      console.log('Adicionando turma:', turmaData)
       
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('school_id')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (profileError || !profileData?.school_id) {
-        console.error('Erro ao buscar perfil da escola ou school_id ausente:', profileError)
-        toast.error("Não foi possível identificar sua escola. Verifique se seu perfil está configurado e recarregue a página.")
-        return { success: false }
-      }
-      
-      const schoolId = profileData.school_id;
-
       const { data, error } = await supabase
-        .from('turmas')
-        .insert([{
-          nome: turmaData.nome,
-          instrumento: turmaData.instrumento,
-          nivel: turmaData.nivel,
-          dia_semana: "A definir",
-          horario_inicio: "00:00",
-          horario_fim: "00:00",
-          vagas_total: 15, // Valor padrão
-          school_id: schoolId
-        }])
+        .from("turmas")
+        .insert({
+          ...turmaData,
+          school_id: profileData.school_id // INCLUINDO O SCHOOL_ID!
+        })
         .select()
         .single()
-
+      
       if (error) {
-        console.error('Erro ao inserir turma:', error)
+        console.error('Erro ao adicionar turma:', error)
         throw error
       }
-
-      console.log('Turma criada:', data)
-
-      // Associar professores à turma se existirem
-      if (turmaData.professores?.length > 0) {
-        const { data: professoresData } = await supabase
-          .from('professores')
-          .select('id, nome')
-          .in('nome', turmaData.professores)
-
-        if (professoresData?.length > 0) {
-          const associations = professoresData.map(prof => ({
-            turma_id: data.id,
-            professor_id: prof.id
-          }))
-
-          await supabase
-            .from('turma_professores')
-            .insert(associations)
-        }
-      }
-
-      toast.success('Turma criada com sucesso!')
-      fetchTurmas()
-      return { success: true }
+      
+      setTurmas(prev => [data, ...prev])
+      
+      console.log('Turma adicionada com sucesso:', data)
+      toast.success("Turma adicionada com sucesso!")
+      return { success: true, data }
     } catch (error) {
-      console.error('Erro ao criar turma:', error)
-      toast.error('Erro ao criar turma')
+      console.error('Erro no addTurma:', error)
+      toast.error("Erro ao adicionar turma")
       return { success: false, error }
     }
   }
 
-  const deleteTurma = async (id: string) => {
+  const deleteTurma = async (turmaId: string) => {
     try {
-      // Primeiro verificar se há alunos matriculados na turma
-      const { data: alunos, error: alunosError } = await supabase
-        .from('alunos')
-        .select('id')
-        .eq('turma_id', id)
-
-      if (alunosError) throw alunosError
-
-      if (alunos && alunos.length > 0) {
-        toast.error(`Não é possível excluir a turma pois há ${alunos.length} aluno(s) matriculado(s). Transfira ou remova os alunos primeiro.`)
-        return
-      }
-
-      // Se não há alunos, proceder com a exclusão
       const { error } = await supabase
-        .from('turmas')
+        .from("turmas")
         .delete()
-        .eq('id', id)
-
+        .eq("id", turmaId)
+      
       if (error) throw error
-
-      toast.success('Turma excluída com sucesso!')
-      fetchTurmas()
+      
+      setTurmas(prev => prev.filter(t => t.id !== turmaId))
+      toast.success("Turma removida com sucesso!")
+      return { success: true }
     } catch (error) {
-      console.error('Erro ao excluir turma:', error)
-      if (error.code === '23503') {
-        toast.error('Não é possível excluir a turma pois há dados relacionados (alunos, aulas, etc.). Remova os dados relacionados primeiro.')
-      } else {
-        toast.error('Erro ao excluir turma')
-      }
+      console.error('Erro ao deletar turma:', error)
+      toast.error("Erro ao remover turma")
+      return { success: false, error }
     }
   }
 
@@ -229,11 +152,5 @@ export function useTurmas() {
     }
   }, [user])
 
-  return {
-    turmas,
-    loading,
-    createTurma,
-    deleteTurma,
-    refetch: fetchTurmas
-  }
+  return { turmas, loading, addTurma, deleteTurma, refetch: fetchTurmas }
 }

@@ -37,9 +37,12 @@ export function useCursos() {
         throw new Error('Não foi possível identificar sua escola')
       }
       
+      const schoolId = profileData.school_id
+      
       const { data, error } = await supabase
         .from("cursos")
         .select("*")
+        .eq('school_id', schoolId) // FILTRO ADICIONADO AQUI!
         .order('nome');
       
       if (error) {
@@ -47,7 +50,7 @@ export function useCursos() {
         throw error;
       }
       
-      console.log('📚 Cursos carregados:', data);
+      console.log('📚 Cursos carregados para a escola:', schoolId, data);
       setCursos(data || []);
     } catch (error) {
       console.error('❌ Erro no fetchCursos:', error);
@@ -83,7 +86,7 @@ export function useCursos() {
         .insert({
           nome: curso.nome,
           descricao: curso.descricao || null,
-          school_id: profileData.school_id
+          school_id: profileData.school_id // INCLUINDO O SCHOOL_ID!
         })
         .select()
         .single();

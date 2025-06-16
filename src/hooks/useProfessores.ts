@@ -44,9 +44,12 @@ export function useProfessores() {
         throw new Error('Não foi possível identificar sua escola')
       }
       
+      const schoolId = profileData.school_id
+      
       const { data, error } = await supabase
         .from("professores")
         .select("*")
+        .eq('school_id', schoolId) // FILTRO ADICIONADO AQUI!
         .order('nome')
       
       if (error) {
@@ -54,7 +57,7 @@ export function useProfessores() {
         throw error
       }
       
-      console.log('👨‍🏫 Professores carregados:', data)
+      console.log('👨‍🏫 Professores carregados para a escola:', schoolId, data)
       setProfessores(data || [])
     } catch (error) {
       console.error('❌ Erro no fetchProfessores:', error)
@@ -97,7 +100,7 @@ export function useProfessores() {
           password: professorData.senha,
           nome_completo: professorData.nome,
           tipo_usuario: 'professor',
-          school_id: profileData.school_id,
+          school_id: profileData.school_id, // INCLUINDO O SCHOOL_ID!
           metadata: {
             telefone: professorData.telefone,
             especialidades: professorData.especialidades

@@ -23,8 +23,8 @@ export function useAlunos() {
         .eq('id', user?.id)
         .maybeSingle()
 
-      console.log('📋 Dados do perfil:', profileData)
-      console.log('❌ Erro do perfil:', profileError)
+      console.log('📋 Dados do perfil (alunos):', profileData)
+      console.log('❌ Erro do perfil (alunos):', profileError)
 
       if (profileError) {
         console.error('Erro ao buscar perfil:', profileError)
@@ -38,6 +38,8 @@ export function useAlunos() {
 
       console.log('🏫 School ID encontrado:', profileData.school_id)
 
+      const schoolId = profileData.school_id
+
       const { data, error } = await supabase
         .from("alunos")
         .select(
@@ -48,8 +50,10 @@ export function useAlunos() {
             )
           `
         )
+        .eq('school_id', schoolId) // FILTRO ADICIONADO AQUI!
+        .order('created_at', { ascending: false })
 
-      console.log('📚 Dados dos alunos recebidos:', data)
+      console.log('📚 Dados dos alunos recebidos para a escola:', schoolId, data)
       console.log('❌ Erro na busca de alunos:', error)
 
       if (error) {
@@ -74,7 +78,7 @@ export function useAlunos() {
         instrumento: aluno.instrumento ?? "",
       }))
 
-      console.log('✅ Alunos processados:', alunosCompletos.length)
+      console.log('✅ Alunos processados para a escola:', alunosCompletos.length)
       setAlunos(alunosCompletos)
     } catch (error) {
       console.error("❌ Erro ao carregar alunos:", error)
