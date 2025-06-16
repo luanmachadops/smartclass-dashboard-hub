@@ -21,7 +21,21 @@ export function useCursos() {
   const fetchCursos = async () => {
     try {
       setLoading(true);
-      console.log('Buscando cursos...');
+      console.log('🔍 Buscando cursos...');
+      
+      // Verificar school_id do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user?.id)
+        .maybeSingle()
+
+      console.log('📋 Dados do perfil (cursos):', profileData)
+      
+      if (profileError || !profileData?.school_id) {
+        console.error('Erro no perfil ou school_id ausente:', profileError)
+        throw new Error('Não foi possível identificar sua escola')
+      }
       
       const { data, error } = await supabase
         .from("cursos")
@@ -33,11 +47,11 @@ export function useCursos() {
         throw error;
       }
       
-      console.log('Cursos carregados:', data);
+      console.log('📚 Cursos carregados:', data);
       setCursos(data || []);
     } catch (error) {
-      console.error('Erro no fetchCursos:', error);
-      toast.error("Erro ao carregar cursos");
+      console.error('❌ Erro no fetchCursos:', error);
+      toast.error(`Erro ao carregar cursos: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -92,9 +106,14 @@ export function useCursos() {
   };
 
   useEffect(() => {
+    console.log('🔄 useEffect do useCursos executado')
+    console.log('👤 User estado:', !!user)
+    
     if (user) {
+      console.log('✅ Usuário logado, buscando cursos...')
       fetchCursos();
     } else {
+      console.log('❌ Usuário não logado, limpando dados...')
       setLoading(false);
       setCursos([]);
     }

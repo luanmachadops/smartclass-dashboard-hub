@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
@@ -28,7 +27,24 @@ export function useTurmas() {
   const { user } = useAuth()
 
   const fetchTurmas = async () => {
+    console.log('🔍 Iniciando busca de turmas...')
+    console.log('👤 Usuário atual:', user?.id)
+    
     try {
+      // Verificar school_id do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user?.id)
+        .maybeSingle()
+
+      console.log('📋 Dados do perfil (turmas):', profileData)
+      
+      if (profileError || !profileData?.school_id) {
+        console.error('Erro no perfil ou school_id ausente:', profileError)
+        throw new Error('Não foi possível identificar sua escola')
+      }
+
       const { data, error } = await supabase
         .from('turmas')
         .select(`
@@ -43,6 +59,9 @@ export function useTurmas() {
           )
         `)
         .order('created_at', { ascending: false })
+
+      console.log('📚 Dados das turmas recebidos:', data)
+      console.log('❌ Erro na busca de turmas:', error)
 
       if (error) throw error
 
@@ -78,9 +97,10 @@ export function useTurmas() {
       }) || []
 
       setTurmas(turmasFormatadas)
+      console.log('✅ Turmas processadas:', turmasFormatadas.length)
     } catch (error) {
-      console.error('Erro ao buscar turmas:', error)
-      toast.error('Erro ao carregar turmas')
+      console.error('❌ Erro ao buscar turmas:', error)
+      toast.error(`Erro ao carregar turmas: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -196,9 +216,14 @@ export function useTurmas() {
   }
 
   useEffect(() => {
+    console.log('🔄 useEffect do useTurmas executado')
+    console.log('👤 User estado:', !!user)
+    
     if (user) {
+      console.log('✅ Usuário logado, buscando turmas...')
       fetchTurmas()
     } else {
+      console.log('❌ Usuário não logado, limpando dados...')
       setLoading(false)
       setTurmas([])
     }

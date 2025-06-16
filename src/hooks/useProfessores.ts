@@ -28,6 +28,21 @@ export function useProfessores() {
   const fetchProfessores = async () => {
     try {
       setLoading(true)
+      console.log('🔍 Buscando professores...')
+      
+      // Verificar school_id do usuário
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user?.id)
+        .maybeSingle()
+
+      console.log('📋 Dados do perfil (professores):', profileData)
+      
+      if (profileError || !profileData?.school_id) {
+        console.error('Erro no perfil ou school_id ausente:', profileError)
+        throw new Error('Não foi possível identificar sua escola')
+      }
       
       const { data, error } = await supabase
         .from("professores")
@@ -39,10 +54,11 @@ export function useProfessores() {
         throw error
       }
       
+      console.log('👨‍🏫 Professores carregados:', data)
       setProfessores(data || [])
     } catch (error) {
-      console.error('Erro no fetchProfessores:', error)
-      toast.error("Erro ao carregar professores")
+      console.error('❌ Erro no fetchProfessores:', error)
+      toast.error(`Erro ao carregar professores: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -113,9 +129,14 @@ export function useProfessores() {
   }
 
   useEffect(() => {
+    console.log('🔄 useEffect do useProfessores executado')
+    console.log('👤 User estado:', !!user)
+    
     if (user) {
+      console.log('✅ Usuário logado, buscando professores...')
       fetchProfessores()
     } else {
+      console.log('❌ Usuário não logado, limpando dados...')
       setLoading(false)
       setProfessores([])
     }

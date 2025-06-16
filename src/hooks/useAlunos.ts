@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -11,7 +12,32 @@ export function useAlunos() {
 
   const fetchAlunos = async () => {
     setLoading(true)
+    console.log('🔍 Iniciando busca de alunos...')
+    console.log('👤 Usuário atual:', user?.id)
+    
     try {
+      // Primeiro, vamos verificar se o usuário tem school_id
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('school_id')
+        .eq('id', user?.id)
+        .maybeSingle()
+
+      console.log('📋 Dados do perfil:', profileData)
+      console.log('❌ Erro do perfil:', profileError)
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError)
+        throw new Error(`Erro ao buscar perfil: ${profileError.message}`)
+      }
+
+      if (!profileData?.school_id) {
+        console.error('School ID não encontrado no perfil')
+        throw new Error('School ID não encontrado no perfil do usuário')
+      }
+
+      console.log('🏫 School ID encontrado:', profileData.school_id)
+
       const { data, error } = await supabase
         .from("alunos")
         .select(
@@ -22,6 +48,9 @@ export function useAlunos() {
             )
           `
         )
+
+      console.log('📚 Dados dos alunos recebidos:', data)
+      console.log('❌ Erro na busca de alunos:', error)
 
       if (error) {
         throw error
@@ -45,10 +74,11 @@ export function useAlunos() {
         instrumento: aluno.instrumento ?? "",
       }))
 
+      console.log('✅ Alunos processados:', alunosCompletos.length)
       setAlunos(alunosCompletos)
     } catch (error) {
-      console.error("Erro ao carregar alunos:", error)
-      toast.error("Erro ao carregar alunos")
+      console.error("❌ Erro ao carregar alunos:", error)
+      toast.error(`Erro ao carregar alunos: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -125,9 +155,14 @@ export function useAlunos() {
   }
 
   useEffect(() => {
+    console.log('🔄 useEffect do useAlunos executado')
+    console.log('👤 User estado:', !!user)
+    
     if (user) {
+      console.log('✅ Usuário logado, buscando alunos...')
       fetchAlunos()
     } else {
+      console.log('❌ Usuário não logado, limpando dados...')
       setLoading(false)
       setAlunos([])
     }
