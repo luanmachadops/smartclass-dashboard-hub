@@ -17,7 +17,7 @@ interface AddTurmaModalProps {
 export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { createTurma } = useTurmas()
+  const { addTurma } = useTurmas() // Changed from createTurma to addTurma
   const { professores } = useProfessores()
   
   const [formData, setFormData] = useState({
@@ -93,7 +93,7 @@ export function AddTurmaModal({ trigger }: AddTurmaModalProps) {
     
     console.log('Enviando dados:', dadosParaEnviar)
     
-    const result = await createTurma(dadosParaEnviar)
+    const result = await addTurma(dadosParaEnviar) // Using addTurma instead of createTurma
     
     if (result.success) {
       setOpen(false)
