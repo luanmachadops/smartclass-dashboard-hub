@@ -1,0 +1,128 @@
+[
+  {
+    "?column?": "CREATE POLICY alunos_delete_admins ON public.alunos FOR DELETE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY alunos_insert_admins ON public.alunos FOR INSERT WITH CHECK (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY alunos_select_admins ON public.alunos FOR SELECT USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY alunos_select_own ON public.alunos FOR SELECT USING ((user_id = auth.uid()));"
+  },
+  {
+    "?column?": "CREATE POLICY alunos_select_professor ON public.alunos FOR SELECT USING ((turma_id IN ( SELECT tp.turma_id\n   FROM (turma_professores tp\n     JOIN professores p ON ((tp.professor_id = p.id)))\n  WHERE (p.user_id = auth.uid()))));"
+  },
+  {
+    "?column?": "CREATE POLICY alunos_update_admins ON public.alunos FOR UPDATE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY alunos_update_own ON public.alunos FOR UPDATE USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));"
+  },
+  {
+    "?column?": "CREATE POLICY chamadas_delete_admins ON public.chamadas FOR DELETE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY chamadas_insert_admins ON public.chamadas FOR INSERT WITH CHECK (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY chamadas_manage_professor ON public.chamadas FOR ALL USING ((turma_id IN ( SELECT tp.turma_id\n   FROM (turma_professores tp\n     JOIN professores p ON ((tp.professor_id = p.id)))\n  WHERE (p.user_id = auth.uid()))));"
+  },
+  {
+    "?column?": "CREATE POLICY chamadas_select_admins ON public.chamadas FOR SELECT USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY chamadas_update_admins ON public.chamadas FOR UPDATE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY chat_participants_manage_school_members ON public.conversation_participants FOR ALL USING ((EXISTS ( SELECT 1\n   FROM conversations c\n  WHERE ((c.id = conversation_participants.conversation_id) AND (c.school_id = get_my_school_id())))));"
+  },
+  {
+    "?column?": "CREATE POLICY chat_manage_school_members ON public.conversations FOR ALL USING ((school_id = get_my_school_id()));"
+  },
+  {
+    "?column?": "CREATE POLICY chat_messages_manage_school_members ON public.messages FOR ALL USING ((EXISTS ( SELECT 1\n   FROM conversations c\n  WHERE ((c.id = messages.conversation_id) AND (c.school_id = get_my_school_id())))));"
+  },
+  {
+    "?column?": "CREATE POLICY presencas_delete_admins ON public.presencas FOR DELETE USING ((EXISTS ( SELECT 1\n   FROM chamadas c\n  WHERE ((c.id = presencas.chamada_id) AND (c.school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))))));"
+  },
+  {
+    "?column?": "CREATE POLICY presencas_insert_admins ON public.presencas FOR INSERT WITH CHECK ((EXISTS ( SELECT 1\n   FROM chamadas c\n  WHERE ((c.id = presencas.chamada_id) AND (c.school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))))));"
+  },
+  {
+    "?column?": "CREATE POLICY presencas_manage_professor ON public.presencas FOR ALL USING ((chamada_id IN ( SELECT c.id\n   FROM (chamadas c\n     JOIN professores p ON ((c.professor_id = p.id)))\n  WHERE (p.user_id = auth.uid()))));"
+  },
+  {
+    "?column?": "CREATE POLICY presencas_select_admins ON public.presencas FOR SELECT USING ((EXISTS ( SELECT 1\n   FROM chamadas c\n  WHERE ((c.id = presencas.chamada_id) AND (c.school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))))));"
+  },
+  {
+    "?column?": "CREATE POLICY presencas_select_aluno ON public.presencas FOR SELECT USING ((aluno_id IN ( SELECT a.id\n   FROM alunos a\n  WHERE (a.user_id = auth.uid()))));"
+  },
+  {
+    "?column?": "CREATE POLICY presencas_update_admins ON public.presencas FOR UPDATE USING ((EXISTS ( SELECT 1\n   FROM chamadas c\n  WHERE ((c.id = presencas.chamada_id) AND (c.school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))))));"
+  },
+  {
+    "?column?": "CREATE POLICY professores_delete_admins ON public.professores FOR DELETE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY professores_insert_admins ON public.professores FOR INSERT WITH CHECK (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY professores_select_admins ON public.professores FOR SELECT USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY professores_select_others ON public.professores FOR SELECT USING ((school_id = get_my_school_id()));"
+  },
+  {
+    "?column?": "CREATE POLICY professores_update_admins ON public.professores FOR UPDATE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY professores_update_own ON public.professores FOR UPDATE USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));"
+  },
+  {
+    "?column?": "CREATE POLICY profiles_delete_admins ON public.profiles FOR DELETE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY profiles_insert_admins ON public.profiles FOR INSERT WITH CHECK (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY profiles_select_admins ON public.profiles FOR SELECT USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY profiles_select_others ON public.profiles FOR SELECT USING ((school_id = get_my_school_id()));"
+  },
+  {
+    "?column?": "CREATE POLICY profiles_update_admins ON public.profiles FOR UPDATE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY profiles_update_own ON public.profiles FOR UPDATE USING ((id = auth.uid())) WITH CHECK ((id = auth.uid()));"
+  },
+  {
+    "?column?": "CREATE POLICY schools_delete_owner ON public.schools FOR DELETE USING ((owner_id = auth.uid()));"
+  },
+  {
+    "?column?": "CREATE POLICY schools_select_members ON public.schools FOR SELECT USING ((id = get_my_school_id()));"
+  },
+  {
+    "?column?": "CREATE POLICY schools_update_owner ON public.schools FOR UPDATE USING ((owner_id = auth.uid()));"
+  },
+  {
+    "?column?": "CREATE POLICY turmas_delete_admins ON public.turmas FOR DELETE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY turmas_insert_admins ON public.turmas FOR INSERT WITH CHECK (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY turmas_select_admins ON public.turmas FOR SELECT USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  },
+  {
+    "?column?": "CREATE POLICY turmas_select_aluno ON public.turmas FOR SELECT USING ((id IN ( SELECT a.turma_id\n   FROM alunos a\n  WHERE (a.user_id = auth.uid()))));"
+  },
+  {
+    "?column?": "CREATE POLICY turmas_select_professor ON public.turmas FOR SELECT USING ((id IN ( SELECT tp.turma_id\n   FROM (turma_professores tp\n     JOIN professores p ON ((tp.professor_id = p.id)))\n  WHERE (p.user_id = auth.uid()))));"
+  },
+  {
+    "?column?": "CREATE POLICY turmas_update_admins ON public.turmas FOR UPDATE USING (((school_id = get_my_school_id()) AND (get_my_role() = ANY (ARRAY['admin'::text, 'diretor'::text, 'secretario'::text]))));"
+  }
+]

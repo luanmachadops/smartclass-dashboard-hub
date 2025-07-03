@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSchool } from '@/contexts/SchoolContext'
 import { Conversation, Message, PollData, AttachmentType } from '@/types/chat'
 import { toast } from 'sonner'
 
@@ -11,6 +12,7 @@ export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const { schoolId } = useSchool()
 
   const fetchConversations = async () => {
     if (!user) return

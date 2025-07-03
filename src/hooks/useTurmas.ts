@@ -1,8 +1,7 @@
-
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
-import { useAuth } from "@/contexts/AuthContext"
+import { useSchool } from "@/contexts/SchoolContext"
 
 export interface Turma {
   id: string
@@ -28,28 +27,17 @@ export interface Turma {
 export function useTurmas() {
   const [turmas, setTurmas] = useState<Turma[]>([])
   const [loading, setLoading] = useState(true)
-  const { user } = useAuth()
+  const { schoolId, loading: schoolLoading } = useSchool()
 
   const fetchTurmas = async () => {
+    if (!schoolId) {
+      console.log('⏳ Aguardando school_id...')
+      return
+    }
+
     try {
       setLoading(true)
-      console.log('🔍 Buscando turmas...')
-      
-      // Verificar school_id do usuário
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('school_id')
-        .eq('id', user?.id)
-        .maybeSingle()
-
-      console.log('📋 Dados do perfil (turmas):', profileData)
-      
-      if (profileError || !profileData?.school_id) {
-        console.error('Erro no perfil ou school_id ausente:', profileError)
-        throw new Error('Não foi possível identificar sua escola')
-      }
-
-      const schoolId = profileData.school_id
+      console.log('🔍 Buscando turmas para a escola:', schoolId)
 
       const { data, error } = await supabase
         .from("turmas")
@@ -72,52 +60,55 @@ export function useTurmas() {
     }
   }
 
-  const addTurma = async (turmaData: any) => {
-    if (!user) {
-      toast.error("É necessário estar autenticado para adicionar uma turma.")
-      return { success: false }
-    }
-
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (profileError || !profileData?.school_id) {
-      console.error('Erro ao buscar perfil da escola:', profileError)
-      toast.error("Não foi possível identificar sua escola para adicionar a turma.")
-      return { success: false }
+  const addTurma = async (turmaData: Partial<Turma>) => {
+    if (!schoolId) {
+      toast.error("É necessário estar autenticado e ter uma escola associada para adicionar uma turma.");
+      return { success: false };
     }
 
     try {
-      console.log('Adicionando turma:', turmaData)
-      
+
+      if (!turmaData.nome) {
+        toast.error('O nome da turma é obrigatório.');
+        return { success: false };
+      }
+
+      const dadosParaEnviar = {
+        nome: turmaData.nome,
+        instrumento: turmaData.instrumento || 'Não especificado',
+        nivel: turmaData.nivel || 'iniciante',
+        dia_semana: turmaData.dia_semana || 'Não especificado',
+        horario_inicio: turmaData.horario_inicio || '00:00',
+        horario_fim: turmaData.horario_fim || '00:00',
+        valor_mensal: turmaData.valor_mensal || null,
+        vagas_total: turmaData.vagas_total || 10,
+        curso_id: turmaData.curso_id || null,
+        ativa: turmaData.ativa ?? true,
+        school_id: schoolId,
+      };
+
       const { data, error } = await supabase
         .from("turmas")
-        .insert({
-          ...turmaData,
-          school_id: profileData.school_id // INCLUINDO O SCHOOL_ID!
-        })
+        .insert(dadosParaEnviar)
         .select()
-        .single()
-      
+        .single();
+
       if (error) {
-        console.error('Erro ao adicionar turma:', error)
-        throw error
+        console.error('Erro ao adicionar turma:', error);
+        toast.error(`Erro ao adicionar turma: ${error.message}`);
+        return { success: false, error };
       }
-      
-      setTurmas(prev => [data, ...prev])
-      
-      console.log('Turma adicionada com sucesso:', data)
-      toast.success("Turma adicionada com sucesso!")
-      return { success: true, data }
-    } catch (error) {
-      console.error('Erro no addTurma:', error)
-      toast.error("Erro ao adicionar turma")
-      return { success: false, error }
+
+      toast.success("Turma adicionada com sucesso!");
+      fetchTurmas(); // Atualiza a lista de turmas
+      return { success: true, data };
+
+    } catch (error: any) {
+      console.error('Erro inesperado ao adicionar turma:', error);
+      toast.error(`Erro inesperado: ${error.message}`);
+      return { success: false, error };
     }
-  }
+  };
 
   const deleteTurma = async (turmaId: string) => {
     try {
@@ -140,17 +131,20 @@ export function useTurmas() {
 
   useEffect(() => {
     console.log('🔄 useEffect do useTurmas executado')
-    console.log('👤 User estado:', !!user)
+    console.log('🏫 School ID estado:', schoolId)
+    console.log('⏳ School loading:', schoolLoading)
     
-    if (user) {
-      console.log('✅ Usuário logado, buscando turmas...')
-      fetchTurmas()
-    } else {
-      console.log('❌ Usuário não logado, limpando dados...')
-      setLoading(false)
-      setTurmas([])
+    if (!schoolLoading) {
+      if (schoolId) {
+        console.log('✅ School ID disponível, buscando turmas...')
+        fetchTurmas()
+      } else {
+        console.log('❌ School ID não disponível, limpando dados...')
+        setLoading(false)
+        setTurmas([])
+      }
     }
-  }, [user])
+  }, [schoolId, schoolLoading])
 
   return { turmas, loading, addTurma, deleteTurma, refetch: fetchTurmas }
 }

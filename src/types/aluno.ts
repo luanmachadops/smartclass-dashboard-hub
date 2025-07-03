@@ -1,6 +1,8 @@
 
 export interface Aluno {
   id: string
+  school_id: string
+  user_id?: string | null
   nome: string
   email?: string | null
   telefone?: string | null

@@ -762,8 +762,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_my_school_id: {
-        Args: Record<PropertyKey, never>
+      get_my_claim: {
+        Args: { claim: string }
         Returns: string
       }
       user_can_access_conversation: {

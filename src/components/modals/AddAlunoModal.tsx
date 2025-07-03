@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,10 @@ import { AlunoFotoUpload } from "./AlunoFotoUpload";
 
 interface AddAlunoModalProps {
   trigger: React.ReactNode;
+  onSuccess?: () => void;
 }
 
-export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
+export function AddAlunoModal({ trigger, onSuccess }: AddAlunoModalProps) {
   const { createAluno } = useAlunos();
   const { turmas } = useTurmas();
 
@@ -29,8 +30,6 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
   // Novo estado: foto
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Remove handleFileChange antigo
   const handleFotoChange = (file: File | null, previewUrl: string | null) => {
@@ -68,14 +67,15 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
       nome,
       email,
       telefone,
-      turma,
+      turma_id: turma, // turma já contém o ID da turma selecionada
       instrumento,
-      foto_url
+      foto_url,
     });
 
     setLoading(false);
     if (result?.success) {
       handleClose();
+      onSuccess?.(); // Chama callback para atualizar a lista
     }
   };
 
@@ -91,7 +91,6 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
       setFotoFile(null);
       setFotoPreviewUrl(null);
       setLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }, 200);
   }
 
@@ -159,7 +158,7 @@ export function AddAlunoModal({ trigger }: AddAlunoModalProps) {
               </SelectTrigger>
               <SelectContent>
                 {turmas.filter(t => t.ativa).map(t => (
-                  <SelectItem key={t.id} value={t.nome}>{t.nome}</SelectItem>
+                  <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

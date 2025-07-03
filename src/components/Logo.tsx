@@ -1,33 +1,39 @@
 
-import { Music } from "lucide-react"
-import { Link } from "react-router-dom"
+import { cn } from "@/lib/utils";
+import logoSvg from "./logo.svg";
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg"
-  showText?: boolean
+  size?: "sm" | "md" | "lg";
+  showText?: boolean;
+  className?: string;
 }
 
-export function Logo({ size = "md", showText = true }: LogoProps) {
-  const sizeClasses = {
+export function Logo({ size = "md", showText = true, className }: LogoProps) {
+  const iconSize = {
     sm: "h-6 w-6",
-    md: "h-8 w-8", 
-    lg: "h-10 w-10"
-  }
+    md: "h-8 w-8",
+    lg: "h-10 w-10",
+  };
 
-  const textSizeClasses = {
+  const textSize = {
     sm: "text-lg",
     md: "text-xl",
-    lg: "text-3xl"
-  }
+    lg: "text-2xl",
+  };
 
   return (
-    <Link to="/" className="flex items-center gap-2">
-      <Music className={`${sizeClasses[size]} text-primary`} />
+    <div className={cn("flex items-center gap-2", className)}>
+      <img 
+        src={logoSvg} 
+        alt="SmartClass Logo" 
+        className={cn("object-contain", iconSize[size])} 
+        loading="lazy"
+      />
       {showText && (
-        <span className={`${textSizeClasses[size]} font-bold text-foreground`}>
+        <span className={cn("font-bold text-foreground", textSize[size])}>
           SmartClass
         </span>
       )}
-    </Link>
-  )
+    </div>
+  );
 }

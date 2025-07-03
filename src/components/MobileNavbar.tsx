@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { useUserProfile } from "@/contexts/UserProfileContext"
 import {
   Home,
   Users,
@@ -12,25 +13,76 @@ import {
 } from "lucide-react"
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Turmas", href: "/turmas", icon: Users },
-  { name: "Cursos", href: "/cursos", icon: BookOpen },
-  { name: "Alunos", href: "/alunos", icon: GraduationCap },
-  { name: "Professores", href: "/professores", icon: UserCheck },
-  { name: "Chat", href: "/comunicacao", icon: MessageCircle },
-  { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign },
+  { 
+    name: "Dashboard", 
+    href: "/dashboard", 
+    icon: Home, 
+    roles: ['diretor', 'admin', 'professor', 'aluno', 'secretario'] 
+  },
+  { 
+    name: "Turmas", 
+    href: "/turmas", 
+    icon: Users, 
+    roles: ['diretor', 'admin', 'secretario', 'professor'] 
+  },
+  { 
+    name: "Cursos", 
+    href: "/cursos", 
+    icon: BookOpen, 
+    roles: ['diretor', 'admin'] 
+  },
+  { 
+    name: "Alunos", 
+    href: "/alunos", 
+    icon: GraduationCap, 
+    roles: ['diretor', 'admin', 'secretario', 'professor'] 
+  },
+  { 
+    name: "Professores", 
+    href: "/professores", 
+    icon: UserCheck, 
+    roles: ['diretor', 'admin', 'secretario'] 
+  },
+  { 
+    name: "Chat", 
+    href: "/comunicacao", 
+    icon: MessageCircle, 
+    roles: ['diretor', 'admin', 'professor', 'aluno', 'secretario'] 
+  },
+  { 
+    name: "Relatórios", 
+    href: "/relatorios", 
+    icon: BarChart3, 
+    roles: ['diretor', 'admin'] 
+  },
+  { 
+    name: "Financeiro", 
+    href: "/financeiro", 
+    icon: DollarSign, 
+    roles: ['diretor', 'admin', 'secretario'] 
+  },
 ]
 
 export function MobileNavbar() {
   const location = useLocation()
+  const { profile } = useUserProfile()
+
+  // Filtrar navegação baseada no papel do usuário
+  const filteredNavigation = navigation.filter(item => 
+    profile?.tipo_usuario && item.roles.includes(profile.tipo_usuario)
+  )
 
   const isActive = (href: string) => location.pathname === href
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 lg:hidden">
-      <div className="grid grid-cols-7 h-16">
-        {navigation.map((item) => (
+      <div className={cn(
+        "grid h-16",
+        filteredNavigation.length <= 4 ? "grid-cols-4" : 
+        filteredNavigation.length <= 5 ? "grid-cols-5" :
+        filteredNavigation.length <= 6 ? "grid-cols-6" : "grid-cols-7"
+      )}>
+        {filteredNavigation.map((item) => (
           <Link
             key={item.name}
             to={item.href}

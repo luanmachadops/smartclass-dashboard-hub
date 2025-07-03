@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/AuthContext"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Auth() {
   const [loginData, setLoginData] = useState({ email: "", password: "" })
@@ -21,39 +22,50 @@ export default function Auth() {
   const [loading, setLoading] = useState(false)
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     
-    const { error } = await signIn(loginData.email, loginData.password)
+    const result = await signIn({ email: loginData.email, password: loginData.password })
     
-    if (!error) {
-      navigate("/dashboard")
+    if (result.error) {
+      // O erro já foi tratado no AuthContext com toast
+      setLoading(false)
+      return
     }
+    
+    // Se chegou até aqui, o login foi bem-sucedido
+    navigate("/dashboard")
     setLoading(false)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (registerData.password !== registerData.confirmPassword) {
-      alert("As senhas não coincidem")
+      toast({ title: 'Erro', description: 'As senhas não coincidem.', variant: 'destructive' })
+      return
+    }
+
+    if (registerData.password.length < 6) {
+      toast({ title: 'Erro', description: 'A senha deve ter pelo menos 6 caracteres.', variant: 'destructive' })
       return
     }
 
     setLoading(true)
-    
-    const { error } = await signUp(
-      registerData.email,
-      registerData.password,
-      registerData.directorName,
-      registerData.schoolName
-    )
-    
-    if (!error) {
-      navigate("/dashboard")
+
+    const result = await signUp(registerData)
+
+    if (result.error) {
+      // O erro já é tratado no AuthContext com um toast
+    } else if (result.needsEmailConfirmation) {
+      navigate(`/email-confirmation?email=${encodeURIComponent(registerData.email)}`)
+    } else {
+      navigate('/dashboard')
     }
+
     setLoading(false)
   }
 

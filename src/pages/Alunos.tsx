@@ -12,7 +12,7 @@ import { AlunoDetails } from "@/components/details/AlunoDetails"
 import { useState } from "react"
 
 export default function Alunos() {
-  const { alunos, loading } = useAlunos()
+  const { alunos, loading, refetch } = useAlunos()
   const [searchTerm, setSearchTerm] = useState("")
 
   const getInitials = (nome: string) => {
@@ -144,6 +144,7 @@ export default function Alunos() {
                 Novo Aluno
               </Button>
             }
+            onSuccess={refetch}
           />
         </div>
 

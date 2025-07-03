@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { MobileNavbar } from "@/components/MobileNavbar"
 import { useAuth } from "@/contexts/AuthContext"
+import { useUserProfile } from "@/contexts/UserProfileContext"
 import {
   Menu,
   Home,
@@ -28,14 +29,54 @@ interface DashboardLayoutProps {
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Turmas", href: "/turmas", icon: Users },
-  { name: "Cursos", href: "/cursos", icon: BookOpen },
-  { name: "Alunos", href: "/alunos", icon: GraduationCap },
-  { name: "Professores", href: "/professores", icon: UserCheck },
-  { name: "Comunicação", href: "/comunicacao", icon: MessageCircle },
-  { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign },
+  { 
+    name: "Dashboard", 
+    href: "/dashboard", 
+    icon: Home, 
+    roles: ['diretor', 'admin', 'professor', 'aluno', 'secretario'] 
+  },
+  { 
+    name: "Turmas", 
+    href: "/turmas", 
+    icon: Users, 
+    roles: ['diretor', 'admin', 'secretario', 'professor'] 
+  },
+  { 
+    name: "Cursos", 
+    href: "/cursos", 
+    icon: BookOpen, 
+    roles: ['diretor', 'admin'] 
+  },
+  { 
+    name: "Alunos", 
+    href: "/alunos", 
+    icon: GraduationCap, 
+    roles: ['diretor', 'admin', 'secretario', 'professor'] 
+  },
+  { 
+    name: "Professores", 
+    href: "/professores", 
+    icon: UserCheck, 
+    roles: ['diretor', 'admin', 'secretario'] 
+  },
+  { 
+    name: "Comunicação", 
+    href: "/comunicacao", 
+    icon: MessageCircle, 
+    roles: ['diretor', 'admin', 'professor', 'aluno', 'secretario'] 
+  },
+  { 
+    name: "Relatórios", 
+    href: "/relatorios", 
+    icon: BarChart3, 
+    roles: ['diretor', 'admin'] 
+  },
+  { 
+    name: "Financeiro", 
+    href: "/financeiro", 
+    icon: DollarSign, 
+    roles: ['diretor', 'admin', 'secretario'] 
+  },
 ]
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
@@ -43,6 +84,12 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const { profile } = useUserProfile()
+
+  // Filtrar navegação baseada no papel do usuário
+  const filteredNavigation = navigation.filter(item => 
+    profile?.tipo_usuario && item.roles.includes(profile.tipo_usuario)
+  )
 
   const isActive = (href: string) => location.pathname === href
 
@@ -91,7 +138,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => (
+        {filteredNavigation.map((item) => (
           <Link
             key={item.name}
             to={item.href}
@@ -118,8 +165,20 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       {/* User info and logout */}
       <div className="border-t border-gray-200 dark:border-gray-700 p-3">
         {!sidebarCollapsed && (
-          <div className="mb-3 text-sm text-muted-foreground truncate animate-fade-in">
-            {user?.email}
+          <div className="mb-3 animate-fade-in">
+            <Link 
+              to="/profile" 
+              className="block hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md p-2 transition-colors"
+            >
+              <div className="text-sm text-muted-foreground truncate">
+                {user?.email}
+              </div>
+              {profile && (
+                <div className="text-xs text-muted-foreground/80 capitalize">
+                  {profile.tipo_usuario} • {profile.nome_completo}
+                </div>
+              )}
+            </Link>
           </div>
         )}
         <Button

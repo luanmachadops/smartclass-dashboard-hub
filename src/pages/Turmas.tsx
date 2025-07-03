@@ -12,7 +12,7 @@ import { useTurmas } from "@/hooks/useTurmas"
 import { AddTurmaModal } from "@/components/modals/AddTurmaModal"
 
 export default function Turmas() {
-  const { turmas, loading, deleteTurma } = useTurmas()
+  const { turmas, loading, deleteTurma, refetch } = useTurmas()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTurma, setSelectedTurma] = useState(null)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -86,6 +86,7 @@ export default function Turmas() {
                 Adicionar Turma
               </Button>
             }
+            onSuccess={refetch}
           />
         </div>
 

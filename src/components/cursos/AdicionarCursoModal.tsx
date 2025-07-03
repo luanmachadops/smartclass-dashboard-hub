@@ -8,8 +8,9 @@ import { useCursos } from "@/hooks/useCursos";
 
 interface AdicionarCursoModalProps {
   trigger: React.ReactNode;
+  onSuccess?: () => void;
 }
-export function AdicionarCursoModal({ trigger }: AdicionarCursoModalProps) {
+export function AdicionarCursoModal({ trigger, onSuccess }: AdicionarCursoModalProps) {
   const { addCurso } = useCursos();
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState("");
@@ -25,6 +26,7 @@ export function AdicionarCursoModal({ trigger }: AdicionarCursoModalProps) {
       setOpen(false);
       setNome("");
       setDescricao("");
+      onSuccess?.(); // Chama callback para atualizar a lista
     }
   }
 

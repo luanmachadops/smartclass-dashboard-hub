@@ -1,44 +1,24 @@
-
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { Aluno } from "@/types/aluno"
-import { useAuth } from "@/contexts/AuthContext"
+import { useSchool } from "@/contexts/SchoolContext"
 
 export function useAlunos() {
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [loading, setLoading] = useState(true)
-  const { user } = useAuth()
+  const { schoolId, loading: schoolLoading } = useSchool()
 
   const fetchAlunos = async () => {
+    if (!schoolId) {
+      console.log('⏳ Aguardando school_id...')
+      return
+    }
+
     setLoading(true)
-    console.log('🔍 Iniciando busca de alunos...')
-    console.log('👤 Usuário atual:', user?.id)
+    console.log('🔍 Iniciando busca de alunos para a escola:', schoolId)
     
     try {
-      // Primeiro, vamos verificar se o usuário tem school_id
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('school_id')
-        .eq('id', user?.id)
-        .maybeSingle()
-
-      console.log('📋 Dados do perfil (alunos):', profileData)
-      console.log('❌ Erro do perfil (alunos):', profileError)
-
-      if (profileError) {
-        console.error('Erro ao buscar perfil:', profileError)
-        throw new Error(`Erro ao buscar perfil: ${profileError.message}`)
-      }
-
-      if (!profileData?.school_id) {
-        console.error('School ID não encontrado no perfil')
-        throw new Error('School ID não encontrado no perfil do usuário')
-      }
-
-      console.log('🏫 School ID encontrado:', profileData.school_id)
-
-      const schoolId = profileData.school_id
 
       const { data, error } = await supabase
         .from("alunos")
@@ -88,89 +68,58 @@ export function useAlunos() {
     }
   }
 
-  // Insere o aluno via Edge Function para garantir segurança
-  const createAluno = async (formData: any) => {
-    if (!user) {
-      toast.error("É necessário estar autenticado para registrar um aluno.")
-      return { success: false }
-    }
-
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (profileError || !profileData?.school_id) {
-      console.error('Erro ao buscar perfil da escola:', profileError)
-      toast.error("Não foi possível identificar sua escola para registrar o aluno.")
-      return { success: false }
+  const createAluno = async (alunoData: Omit<Aluno, 'id' | 'created_at' | 'updated_at' | 'turma'>) => {
+    if (!schoolId) {
+      toast.error("É necessário estar autenticado e ter uma escola associada para registrar um aluno.");
+      return { success: false };
     }
 
     try {
-      console.log('Criando aluno via Edge Function:', formData)
 
-      const { data, error } = await supabase.functions.invoke('create-access', {
-        body: {
-          email: formData.email,
-          password: formData.senha || 'temporaria123', // Senha temporária se não fornecida
-          nome_completo: formData.nome,
-          tipo_usuario: 'aluno',
-          school_id: profileData.school_id,
-          metadata: {
-            telefone: formData.telefone,
-            endereco: formData.endereco,
-            responsavel: formData.responsavel,
-            telefone_responsavel: formData.telefone_responsavel,
-            data_nascimento: formData.data_nascimento,
-            instrumento: formData.instrumento
-          }
-        }
-      })
+      const { data, error } = await supabase
+        .from('alunos')
+        .insert([{ 
+          ...alunoData, 
+          school_id: schoolId,
+          turma_id: alunoData.turma_id, // turma_id já vem como ID correto
+        }])
+        .select();
 
       if (error) {
-        console.error('Erro na Edge Function:', error)
-        throw new Error(error.message)
+        console.error("Erro ao criar aluno:", error);
+        toast.error(`Erro ao criar aluno: ${error.message}`);
+        return { success: false };
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro desconhecido')
-      }
+      toast.success("Aluno criado com sucesso!");
+      fetchAlunos(); // Re-fetch para atualizar a lista
+      return { success: true, data };
 
-      console.log('Aluno criado com sucesso:', data)
-      toast.success("Aluno registrado com sucesso!")
-      
-      // Refaz a busca para atualizar a lista
-      await fetchAlunos()
-      return { success: true }
-
-    } catch (error) {
-      console.error("Erro ao registrar aluno:", error)
-      toast.error(`Erro ao registrar aluno: ${error.message}`)
-      return { success: false }
+    } catch (error: any) {
+      console.error("Erro inesperado:", error);
+      toast.error(`Erro inesperado: ${error.message}`);
+      return { success: false };
     }
-  }
+  };
 
-  // Função utilitária para pegar o id da turma pelo nome (opcional)
-  async function getTurmaIdByNome(nome: string) {
-    if (!nome) return null
-    const { data } = await supabase.from("turmas").select("id").eq("nome", nome).maybeSingle()
-    return data?.id ?? null
-  }
+
 
   useEffect(() => {
     console.log('🔄 useEffect do useAlunos executado')
-    console.log('👤 User estado:', !!user)
+    console.log('🏫 School ID estado:', schoolId)
+    console.log('⏳ School loading:', schoolLoading)
     
-    if (user) {
-      console.log('✅ Usuário logado, buscando alunos...')
-      fetchAlunos()
-    } else {
-      console.log('❌ Usuário não logado, limpando dados...')
-      setLoading(false)
-      setAlunos([])
+    if (!schoolLoading) {
+      if (schoolId) {
+        console.log('✅ School ID disponível, buscando alunos...')
+        fetchAlunos()
+      } else {
+        console.log('❌ School ID não disponível, limpando dados...')
+        setLoading(false)
+        setAlunos([])
+      }
     }
-  }, [user])
+  }, [schoolId, schoolLoading])
 
   return { alunos, loading, createAluno, refetch: fetchAlunos }
 }

@@ -15,7 +15,7 @@ import { CursoCard } from "@/components/cursos/CursoCard"
 import { DashboardCursos } from "@/components/cursos/DashboardCursos"
 
 export default function Cursos() {
-  const { cursos, loading } = useCursos()
+  const { cursos, loading, refetch } = useCursos()
   const { turmas } = useTurmas()
   const { alunos } = useAlunos()
   const [searchTerm, setSearchTerm] = useState("")
@@ -139,7 +139,8 @@ export default function Cursos() {
                 <Plus className="h-4 w-4" />
                 Adicionar Curso
               </Button>
-            } 
+            }
+            onSuccess={refetch}
           />
         </div>
 
@@ -176,7 +177,8 @@ export default function Cursos() {
                       <Plus className="h-4 w-4 mr-2" />
                       Criar Primeiro Curso
                     </Button>
-                  } 
+                  }
+                  onSuccess={refetch}
                 />
               )}
             </CardContent>

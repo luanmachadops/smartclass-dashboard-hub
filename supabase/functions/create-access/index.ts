@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -53,7 +52,18 @@ serve(async (req) => {
       throw new Error('Campos obrigatórios em falta: email, senha, nome completo, tipo de usuário e ID da escola')
     }
 
-    // Create user in auth.users
+    // 1. Verificar se a escola existe
+    const { data: schoolData, error: schoolError } = await supabaseAdmin
+      .from('schools')
+      .select('id')
+      .eq('id', school_id)
+      .single()
+
+    if (schoolError || !schoolData) {
+      throw new Error('Escola não encontrada')
+    }
+
+    // 2. Criar usuário
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -61,6 +71,7 @@ serve(async (req) => {
       user_metadata: {
         nome_completo,
         tipo_usuario,
+        school_id, // Incluir school_id nos metadados
         ...metadata
       }
     })
@@ -74,29 +85,23 @@ serve(async (req) => {
       throw new Error('Usuário não foi criado')
     }
 
-    console.log('Auth user created:', authData.user.id)
-
-    // Create profile
+    // Criar perfil explicitamente com school_id
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
+      .upsert({
         id: authData.user.id,
         nome_completo,
         tipo_usuario,
         school_id,
-        telefone: metadata?.telefone || null
+        updated_at: new Date().toISOString(),
       })
 
     if (profileError) {
       console.error('Error creating profile:', profileError)
-      // If profile creation fails, clean up the auth user
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       throw new Error(`Erro ao criar perfil: ${profileError.message}`)
     }
 
-    console.log('Profile created successfully')
-
-    // If creating a professor, add to professores table
+    // 3. Se for professor ou aluno, criar registro específico
     if (tipo_usuario === 'professor') {
       const { error: professorError } = await supabaseAdmin
         .from('professores')
@@ -110,15 +115,9 @@ serve(async (req) => {
           ativo: true
         })
 
-      if (professorError) {
-        console.error('Error creating professor:', professorError)
-        // Clean up auth user and profile
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-        throw new Error(`Erro ao criar professor: ${professorError.message}`)
-      }
+      if (professorError) throw professorError
     }
 
-    // If creating an aluno, add to alunos table
     if (tipo_usuario === 'aluno') {
       const { error: alunoError } = await supabaseAdmin
         .from('alunos')
@@ -135,12 +134,7 @@ serve(async (req) => {
           ativo: true
         })
 
-      if (alunoError) {
-        console.error('Error creating aluno:', alunoError)
-        // Clean up auth user and profile
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-        throw new Error(`Erro ao criar aluno: ${alunoError.message}`)
-      }
+      if (alunoError) throw alunoError
     }
 
     return new Response(
