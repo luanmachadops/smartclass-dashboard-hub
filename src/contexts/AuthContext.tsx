@@ -214,6 +214,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         schoolName
       });
       
+      console.log('Dados sendo enviados para o Supabase:', {
+        email,
+        nome_completo: directorName,
+        nome_escola: schoolName,
+        tipo_usuario: 'diretor'
+      });
+      
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
