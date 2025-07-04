@@ -24,6 +24,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import Auth from "./pages/Auth";
+import SchoolSettings from "./pages/SchoolSettings";
 import NotFound from "./pages/NotFound";
 import { AccessibilityProvider } from "./components/AccessibilityProvider";
 import "./App.css";
@@ -126,6 +127,14 @@ function App() {
                         element={
                           <ProtectedRoute>
                             <LazyProfile />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/school-settings"
+                        element={
+                          <ProtectedRoute>
+                            <SchoolSettings />
                           </ProtectedRoute>
                         }
                       />

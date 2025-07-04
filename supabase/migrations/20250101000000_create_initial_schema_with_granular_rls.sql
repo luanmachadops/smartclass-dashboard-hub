@@ -32,6 +32,14 @@ CREATE TABLE public.schools (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    cnpj TEXT,
+    telefone TEXT,
+    cep TEXT,
+    logradouro TEXT,
+    numero TEXT,
+    bairro TEXT,
+    cidade TEXT,
+    estado TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -231,24 +239,31 @@ DECLARE
   new_school_id uuid;
   user_role TEXT;
 BEGIN
+  -- Cenário 1: Novo Diretor criando uma nova escola
   IF NEW.raw_user_meta_data->>'school_id' IS NULL AND NEW.raw_user_meta_data->>'nome_escola' IS NOT NULL THEN
+    -- Cria a nova escola
     INSERT INTO public.schools (name, owner_id)
     VALUES (NEW.raw_user_meta_data->>'nome_escola', NEW.id)
     RETURNING id INTO new_school_id;
 
+    -- Cria o perfil do diretor para a nova escola
     INSERT INTO public.profiles (id, nome_completo, tipo_usuario, school_id)
     VALUES (NEW.id, NEW.raw_user_meta_data->>'nome_completo', 'diretor', new_school_id);
-  
+
+  -- Cenário 2: Novo usuário sendo convidado para uma escola existente
   ELSIF NEW.raw_user_meta_data->>'school_id' IS NOT NULL THEN
-    user_role := COALESCE(NEW.raw_user_meta_data->>'tipo_usuario', 'aluno');
+    user_role := COALESCE(NEW.raw_user_meta_data->>'tipo_usuario', 'aluno'); -- Define 'aluno' como padrão
     new_school_id := (NEW.raw_user_meta_data->>'school_id')::uuid;
 
+    -- Cria o perfil para o novo usuário
     INSERT INTO public.profiles (id, nome_completo, tipo_usuario, school_id)
     VALUES (NEW.id, NEW.raw_user_meta_data->>'nome_completo', user_role, new_school_id);
 
+    -- Se for um aluno, cria a entrada na tabela de alunos
     IF user_role = 'aluno' THEN
       INSERT INTO public.alunos (user_id, nome, email, school_id)
       VALUES (NEW.id, NEW.raw_user_meta_data->>'nome_completo', NEW.email, new_school_id);
+    -- Se for um professor, cria a entrada na tabela de professores
     ELSIF user_role = 'professor' THEN
       INSERT INTO public.professores (user_id, nome, email, school_id)
       VALUES (NEW.id, NEW.raw_user_meta_data->>'nome_completo', NEW.email, new_school_id);
@@ -258,6 +273,8 @@ BEGIN
 END;
 $$;
 
+-- Recria o gatilho para garantir que ele use a função mais recente
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

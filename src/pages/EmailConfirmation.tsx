@@ -34,7 +34,7 @@ export default function EmailConfirmation() {
     // Verificar se o usuário já está logado
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email_confirmed_at) {
-        navigate('/dashboard')
+        navigate('/school-settings')
       }
     })
   }, [searchParams, navigate])
@@ -56,9 +56,9 @@ export default function EmailConfirmation() {
         setConfirmationStatus('confirmed')
         toast.success('Email confirmado com sucesso!')
         
-        // Redirecionar para o dashboard após 2 segundos
+        // Redirecionar para configuração da escola após 2 segundos
         setTimeout(() => {
-          navigate('/dashboard')
+          navigate('/school-settings')
         }, 2000)
       }
     } catch (error) {

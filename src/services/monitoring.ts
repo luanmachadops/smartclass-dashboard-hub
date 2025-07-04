@@ -4,13 +4,24 @@
  */
 
 import { config } from '@/config/environment'
-import { logger } from './logger'
+import { authLogger } from './logger'
 
 interface PerformanceMetric {
   name: string
   value: number
   timestamp: number
   tags?: Record<string, string>
+  unit?: 'ms' | 'bytes' | 'count' | 'percent'
+}
+
+interface ErrorMetric {
+  error: Error
+  context: string
+  timestamp: number
+  userId?: string
+  sessionId?: string
+  userAgent?: string
+  url?: string
 }
 
 interface UserAction {
@@ -18,19 +29,37 @@ interface UserAction {
   component: string
   timestamp: number
   userId?: string
+  sessionId?: string
+  duration?: number
+  success: boolean
   metadata?: Record<string, any>
 }
 
 class MonitoringService {
   private metrics: PerformanceMetric[] = []
+  private errors: ErrorMetric[] = []
   private userActions: UserAction[] = []
   private performanceObserver?: PerformanceObserver
   private isInitialized = false
+  private sessionId: string
+  private maxMetrics = 1000
+  private retryAttempts = new Map<string, number>()
+  
+  constructor() {
+    this.sessionId = this.generateSessionId()
+  }
+  
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }
 
   init() {
     if (this.isInitialized) return
     
-    logger.info('Inicializando serviço de monitoramento')
+    authLogger.info('Inicializando serviço de monitoramento', {
+      action: 'monitoring_init',
+      sessionId: this.sessionId
+    })
     
     // Configurar observador de performance
     this.setupPerformanceObserver()
@@ -45,12 +74,18 @@ class MonitoringService {
     this.setupSentry()
     
     this.isInitialized = true
-    logger.info('Serviço de monitoramento inicializado')
+    this.setupAlerts()
+    authLogger.info('Serviço de monitoramento inicializado', {
+      action: 'monitoring_init',
+      sessionId: this.sessionId
+    })
   }
 
   private setupPerformanceObserver() {
     if (!('PerformanceObserver' in window)) {
-      logger.warn('PerformanceObserver não suportado neste navegador')
+      authLogger.warn('PerformanceObserver não suportado neste navegador', {
+        action: 'setupPerformanceObserver'
+      })
       return
     }
 
@@ -72,30 +107,32 @@ class MonitoringService {
       // Observar diferentes tipos de métricas
       this.performanceObserver.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint'] })
     } catch (error) {
-      logger.error('Erro ao configurar PerformanceObserver', {}, error as Error)
+      authLogger.error('Erro ao configurar PerformanceObserver', {
+        action: 'setupPerformanceObserver'
+      }, error as Error)
     }
   }
 
   private setupGlobalErrorHandling() {
     // Capturar erros JavaScript
     window.addEventListener('error', (event) => {
-      this.recordError({
-        message: event.message,
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-        error: event.error,
-        type: 'javascript'
-      })
+      this.recordErrorMetric(
+        event.error || new Error(event.message),
+        'global_error',
+        {
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno
+        }
+      )
     })
 
     // Capturar promises rejeitadas
     window.addEventListener('unhandledrejection', (event) => {
-      this.recordError({
-        message: 'Unhandled Promise Rejection',
-        error: event.reason,
-        type: 'promise'
-      })
+      this.recordErrorMetric(
+        event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+        'unhandled_promise_rejection'
+      )
     })
   }
 
@@ -109,19 +146,22 @@ class MonitoringService {
           this.recordMetric({
             name: 'page.load_time',
             value: navigation.loadEventEnd - navigation.navigationStart,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            unit: 'ms'
           })
 
           this.recordMetric({
             name: 'page.dom_content_loaded',
             value: navigation.domContentLoadedEventEnd - navigation.navigationStart,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            unit: 'ms'
           })
 
           this.recordMetric({
             name: 'page.first_byte',
             value: navigation.responseStart - navigation.navigationStart,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            unit: 'ms'
           })
         }
       }, 0)
@@ -130,7 +170,9 @@ class MonitoringService {
 
   private setupSentry() {
     if (!config.monitoring.sentryDsn) {
-      logger.debug('Sentry DSN não configurado, pulando inicialização')
+      authLogger.debug('Sentry DSN não configurado, pulando inicialização', {
+        action: 'setupSentry'
+      })
       return
     }
 
@@ -144,33 +186,83 @@ class MonitoringService {
     //   tracesSampleRate: config.monitoring.enablePerformanceMonitoring ? 0.1 : 0,
     // })
     
-    logger.info('Sentry configurado (implementação pendente)')
+    authLogger.info('Sentry configurado (implementação pendente)', {
+      action: 'setupSentry'
+    })
   }
 
   // Registrar métrica de performance
   recordMetric(metric: PerformanceMetric) {
     this.metrics.push(metric)
-    
-    // Manter apenas as últimas 1000 métricas
-    if (this.metrics.length > 1000) {
-      this.metrics.shift()
-    }
+    this.trimMetrics()
 
     if (config.isDevelopment) {
-      logger.debug('Métrica registrada', metric)
+      authLogger.trace('Métrica registrada', {
+        action: 'recordMetric',
+        metric: metric.name,
+        value: metric.value,
+        unit: metric.unit
+      })
     }
+  }
+  
+  // Registrar erro
+  recordErrorMetric(
+    error: Error,
+    context: string,
+    metadata: Record<string, any> = {}
+  ): void {
+    const errorMetric: ErrorMetric = {
+      error,
+      context,
+      timestamp: Date.now(),
+      userId: this.getCurrentUserId(),
+      sessionId: this.sessionId,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      ...metadata
+    }
+    
+    this.errors.push(errorMetric)
+    this.trimErrors()
+    
+    authLogger.error('Erro registrado no monitoramento', {
+      action: 'recordError',
+      context,
+      sessionId: this.sessionId
+    }, error)
   }
 
   // Registrar ação do usuário
-  recordUserAction(action: UserAction) {
-    this.userActions.push(action)
-    
-    // Manter apenas as últimas 500 ações
-    if (this.userActions.length > 500) {
-      this.userActions.shift()
+  recordUserAction(
+    action: string,
+    component: string,
+    options: {
+      duration?: number
+      success?: boolean
+      metadata?: Record<string, any>
+    } = {}
+  ): void {
+    const userAction: UserAction = {
+      action,
+      component,
+      timestamp: Date.now(),
+      userId: this.getCurrentUserId(),
+      sessionId: this.sessionId,
+      duration: options.duration,
+      success: options.success ?? true,
+      metadata: options.metadata
     }
+    
+    this.userActions.push(userAction)
+    this.trimUserActions()
 
-    logger.debug('Ação do usuário registrada', action)
+    authLogger.trace('Ação do usuário registrada', {
+      action: 'recordUserAction',
+      userAction: action,
+      component,
+      success: userAction.success
+    })
   }
 
   // Registrar evento customizado
@@ -181,21 +273,94 @@ class MonitoringService {
   }) {
     const eventData = {
       ...event,
-      timestamp: event.timestamp || Date.now()
+      timestamp: event.timestamp || Date.now(),
+      sessionId: this.sessionId,
+      userId: this.getCurrentUserId()
     }
-    
-    logger.debug('Evento registrado', eventData)
-    
-    // Registrar como ação do usuário para manter compatibilidade
-    this.recordUserAction({
-      action: event.name,
-      component: 'system',
-      timestamp: eventData.timestamp,
-      metadata: event.properties
+
+    authLogger.trace('Evento customizado registrado', {
+      action: 'recordEvent',
+      eventName: event.name,
+      properties: event.properties
     })
+
+    // Opcionalmente, pode ser mapeado para uma ação de usuário se fizer sentido
+    this.recordUserAction(
+      `event:${event.name}`,
+      'system',
+      {
+        metadata: event.properties
+      }
+    )
   }
 
-  // Registrar erro
+  // Métodos auxiliares para controle de memória
+  private trimMetrics(): void {
+    if (this.metrics.length > this.maxMetrics) {
+      this.metrics = this.metrics.slice(-this.maxMetrics)
+    }
+  }
+  
+  private trimErrors(): void {
+    if (this.errors.length > this.maxMetrics) {
+      this.errors = this.errors.slice(-this.maxMetrics)
+    }
+  }
+  
+  private trimUserActions(): void {
+    if (this.userActions.length > this.maxMetrics) {
+      this.userActions = this.userActions.slice(-this.maxMetrics)
+    }
+  }
+  
+  private getCurrentUserId(): string | undefined {
+    try {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        const user = JSON.parse(userData)
+        return user.id
+      }
+    } catch {
+      // Ignorar erros
+    }
+    return undefined
+  }
+  
+  // Configurar alertas para métricas críticas
+  private setupAlerts(): void {
+    // Alertar se muitos erros em pouco tempo
+    setInterval(() => {
+      const recentErrors = this.errors.filter(e => Date.now() - e.timestamp < 5 * 60 * 1000) // 5 minutos
+      if (recentErrors.length > 10) {
+        authLogger.warn('Muitos erros detectados recentemente', {
+          action: 'errorAlert',
+          errorCount: recentErrors.length,
+          timeWindow: '5min'
+        })
+      }
+    }, 60 * 1000) // Verificar a cada minuto
+    
+    // Alertar se performance está degradada
+    setInterval(() => {
+      const recentMetrics = this.metrics.filter(m => 
+        m.name.includes('duration') && 
+        Date.now() - m.timestamp < 10 * 60 * 1000 // 10 minutos
+      )
+      
+      if (recentMetrics.length > 0) {
+        const avgDuration = recentMetrics.reduce((a, b) => a + b.value, 0) / recentMetrics.length
+        if (avgDuration > 5000) { // 5 segundos
+          authLogger.warn('Performance degradada detectada', {
+            action: 'performanceAlert',
+            avgDuration,
+            metricCount: recentMetrics.length
+          })
+        }
+      }
+    }, 2 * 60 * 1000) // Verificar a cada 2 minutos
+  }
+  
+  // Registrar erro (método legado para compatibilidade)
   recordError(errorInfo: {
     message: string
     filename?: string
@@ -205,99 +370,73 @@ class MonitoringService {
     type: 'javascript' | 'promise' | 'api' | 'custom'
     context?: Record<string, any>
   }) {
-    logger.error('Erro capturado pelo monitoramento', {
-      type: errorInfo.type,
-      message: errorInfo.message,
-      filename: errorInfo.filename,
-      line: errorInfo.lineno,
-      column: errorInfo.colno,
-      context: errorInfo.context
-    }, errorInfo.error)
-
-    // TODO: Enviar para Sentry
-    // if (config.monitoring.sentryDsn) {
-    //   Sentry.captureException(errorInfo.error || new Error(errorInfo.message), {
-    //     contexts: {
-    //       custom: errorInfo.context
-    //     },
-    //     tags: {
-    //       type: errorInfo.type
-    //     }
-    //   })
-    // }
+    const error = errorInfo.error || new Error(errorInfo.message)
+    this.recordErrorMetric(error, errorInfo.type, errorInfo.context)
   }
 
-  // Medir tempo de execução de uma função
-  async measureAsync<T>(name: string, fn: () => Promise<T>, tags?: Record<string, string>): Promise<T> {
+  // Medir tempo de execução de uma função assíncrona
+  async measureAsync<T>(
+    name: string,
+    fn: () => Promise<T>,
+    tags?: Record<string, string>
+  ): Promise<T> {
     const startTime = performance.now()
+    let success = true
+    let error: Error | undefined
     
     try {
       const result = await fn()
-      const duration = performance.now() - startTime
-      
-      this.recordMetric({
-        name: `function.${name}`,
-        value: duration,
-        timestamp: Date.now(),
-        tags: { ...tags, status: 'success' }
-      })
-      
       return result
-    } catch (error) {
+    } catch (err) {
+      success = false
+      error = err as Error
+      throw err
+    } finally {
       const duration = performance.now() - startTime
-      
       this.recordMetric({
-        name: `function.${name}`,
+        name: `${name}_duration`,
         value: duration,
         timestamp: Date.now(),
-        tags: { ...tags, status: 'error' }
+        tags: { ...tags, success: String(success) },
+        unit: 'ms'
       })
       
-      this.recordError({
-        message: `Erro na função ${name}`,
-        error: error as Error,
-        type: 'custom',
-        context: { functionName: name, tags }
-      })
-      
-      throw error
+      if (error) {
+        this.recordErrorMetric(error, `measure_${name}`)
+      }
     }
   }
 
-  // Medir tempo de execução de uma função síncrona
-  measure<T>(name: string, fn: () => T, tags?: Record<string, string>): T {
+  // Medir tempo de execução síncrono
+  measure<T>(
+    name: string,
+    fn: () => T,
+    tags?: Record<string, string>
+  ): T {
     const startTime = performance.now()
+    let success = true
+    let error: Error | undefined
     
     try {
       const result = fn()
-      const duration = performance.now() - startTime
-      
-      this.recordMetric({
-        name: `function.${name}`,
-        value: duration,
-        timestamp: Date.now(),
-        tags: { ...tags, status: 'success' }
-      })
-      
       return result
-    } catch (error) {
+    } catch (err) {
+      success = false
+      error = err as Error
+      throw err
+    } finally {
       const duration = performance.now() - startTime
-      
       this.recordMetric({
-        name: `function.${name}`,
+        name: `${name}_duration`,
         value: duration,
         timestamp: Date.now(),
-        tags: { ...tags, status: 'error' }
+        tags: { ...tags, success: String(success) },
+        unit: 'ms'
       })
       
-      this.recordError({
-        message: `Erro na função ${name}`,
-        error: error as Error,
-        type: 'custom',
-        context: { functionName: name, tags }
-      })
-      
-      throw error
+      if (error) {
+        this.recordErrorMetric(error, `measure_${name}`)
+      }
     }
   }
 
@@ -311,41 +450,92 @@ class MonitoringService {
     return this.userActions.slice(-count)
   }
 
-  // Obter estatísticas de performance
-  getPerformanceStats() {
-    const recentMetrics = this.getRecentMetrics()
+  // Obter estatísticas completas
+  getStats(): {
+    metrics: PerformanceMetric[]
+    errors: ErrorMetric[]
+    userActions: UserAction[]
+    summary: {
+      totalMetrics: number
+      totalErrors: number
+      totalUserActions: number
+      sessionId: string
+      sessionDuration: number
+    }
+  } {
+    const now = Date.now()
+    const sessionStart = Math.min(
+      ...this.metrics.map(m => m.timestamp),
+      ...this.errors.map(e => e.timestamp),
+      ...this.userActions.map(a => a.timestamp)
+    )
     
-    const stats = {
-      totalMetrics: this.metrics.length,
-      totalUserActions: this.userActions.length,
-      averageLoadTime: 0,
-      averageApiResponseTime: 0,
-      errorRate: 0
+    return {
+      metrics: [...this.metrics],
+      errors: [...this.errors],
+      userActions: [...this.userActions],
+      summary: {
+        totalMetrics: this.metrics.length,
+        totalErrors: this.errors.length,
+        totalUserActions: this.userActions.length,
+        sessionId: this.sessionId,
+        sessionDuration: sessionStart ? now - sessionStart : 0
+      }
     }
-
-    // Calcular tempo médio de carregamento
-    const loadTimeMetrics = recentMetrics.filter(m => m.name === 'page.load_time')
-    if (loadTimeMetrics.length > 0) {
-      stats.averageLoadTime = loadTimeMetrics.reduce((sum, m) => sum + m.value, 0) / loadTimeMetrics.length
-    }
-
-    // Calcular tempo médio de resposta da API
-    const apiMetrics = recentMetrics.filter(m => m.name.startsWith('api.'))
-    if (apiMetrics.length > 0) {
-      stats.averageApiResponseTime = apiMetrics.reduce((sum, m) => sum + m.value, 0) / apiMetrics.length
-    }
-
-    return stats
+  }
+  
+  // Obter estatísticas de performance
+  getPerformanceStats(): Record<string, { avg: number; min: number; max: number; count: number }> {
+    const stats: Record<string, { values: number[]; unit?: string }> = {}
+    
+    // Agrupar métricas por nome
+    this.metrics.forEach(metric => {
+      if (!stats[metric.name]) {
+        stats[metric.name] = { values: [], unit: metric.unit }
+      }
+      stats[metric.name].values.push(metric.value)
+    })
+    
+    // Calcular estatísticas
+    const result: Record<string, { avg: number; min: number; max: number; count: number }> = {}
+    
+    Object.entries(stats).forEach(([name, data]) => {
+      const values = data.values
+      result[name] = {
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+        min: Math.min(...values),
+        max: Math.max(...values),
+        count: values.length
+      }
+    })
+    
+    return result
   }
 
+  // Exportar dados para análise
+  exportData(): string {
+    const data = {
+      sessionId: this.sessionId,
+      exportedAt: new Date().toISOString(),
+      stats: this.getStats(),
+      performanceStats: this.getPerformanceStats()
+    }
+    
+    return JSON.stringify(data, null, 2)
+  }
+  
   // Limpar dados antigos
   cleanup() {
-    const oneHourAgo = Date.now() - (60 * 60 * 1000)
+    const cutoff = Date.now() - (24 * 60 * 60 * 1000) // 24 horas
     
-    this.metrics = this.metrics.filter(m => m.timestamp > oneHourAgo)
-    this.userActions = this.userActions.filter(a => a.timestamp > oneHourAgo)
+    this.metrics = this.metrics.filter(m => m.timestamp > cutoff)
+    this.errors = this.errors.filter(e => e.timestamp > cutoff)
+    this.userActions = this.userActions.filter(a => a.timestamp > cutoff)
     
-    logger.debug('Limpeza de dados de monitoramento concluída')
+    authLogger.trace('Limpeza de dados de monitoramento concluída', {
+      action: 'cleanup',
+      cutoffTime: new Date(cutoff).toISOString()
+    })
   }
 
   // Destruir o serviço
@@ -355,10 +545,14 @@ class MonitoringService {
     }
     
     this.metrics = []
+    this.errors = []
     this.userActions = []
     this.isInitialized = false
     
-    logger.info('Serviço de monitoramento destruído')
+    authLogger.info('Serviço de monitoramento destruído', {
+      action: 'destroy',
+      sessionId: this.sessionId
+    })
   }
 }
 

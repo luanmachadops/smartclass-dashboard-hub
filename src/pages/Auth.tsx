@@ -5,10 +5,12 @@ import { Logo } from "@/components/Logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+import { registerSchema, validateData } from "@/schemas/validation"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function Auth() {
   const [loginData, setLoginData] = useState({ email: "", password: "" })
@@ -17,9 +19,12 @@ export default function Auth() {
     directorName: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    phone: "",
+    acceptTerms: false,
   })
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -42,32 +47,34 @@ export default function Auth() {
   }
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    setErrors({});
 
-    if (registerData.password !== registerData.confirmPassword) {
-      toast({ title: 'Erro', description: 'As senhas não coincidem.', variant: 'destructive' })
-      return
+    const validationResult = validateData(registerSchema, registerData, 'registerForm');
+
+    if (!validationResult.success) {
+      setErrors(validationResult.errors);
+      return;
     }
 
-    if (registerData.password.length < 6) {
-      toast({ title: 'Erro', description: 'A senha deve ter pelo menos 6 caracteres.', variant: 'destructive' })
-      return
-    }
+    setLoading(true);
 
-    setLoading(true)
+    const result = await signUp(validationResult.data);
 
-    const result = await signUp(registerData)
+    setLoading(false);
 
     if (result.error) {
-      // O erro já é tratado no AuthContext com um toast
-    } else if (result.needsEmailConfirmation) {
-      navigate(`/email-confirmation?email=${encodeURIComponent(registerData.email)}`)
-    } else {
-      navigate('/dashboard')
+      setErrors({ _general: result.error.message });
+      return;
     }
 
-    setLoading(false)
-  }
+    if (result.needsEmailConfirmation) {
+      navigate(`/email-confirmation?email=${encodeURIComponent(registerData.email)}`);
+    } else {
+      // Após confirmação de e-mail, redirecionar para completar dados da escola
+      navigate('/school-settings');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -135,6 +142,7 @@ export default function Auth() {
                       placeholder="Nome da sua escola de música"
                       required
                     />
+                    {errors.schoolName && <p className="text-sm text-destructive mt-1">{errors.schoolName}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -146,6 +154,7 @@ export default function Auth() {
                       placeholder="Seu nome completo"
                       required
                     />
+                    {errors.directorName && <p className="text-sm text-destructive mt-1">{errors.directorName}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -158,6 +167,7 @@ export default function Auth() {
                       placeholder="seu@email.com"
                       required
                     />
+                    {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -170,6 +180,7 @@ export default function Auth() {
                       placeholder="Crie uma senha segura"
                       required
                     />
+                    {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
                   </div>
 
                   <div className="space-y-2">
@@ -182,7 +193,37 @@ export default function Auth() {
                       placeholder="Confirme sua senha"
                       required
                     />
+                    {errors.confirmPassword && <p className="text-sm text-destructive mt-1">{errors.confirmPassword}</p>}
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone (Opcional)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={registerData.phone}
+                      onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                      placeholder="(11) 99999-9999"
+                    />
+                    {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="acceptTerms" 
+                      checked={registerData.acceptTerms}
+                      onCheckedChange={(checked) => setRegisterData({ ...registerData, acceptTerms: !!checked })}
+                    />
+                    <label
+                      htmlFor="acceptTerms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Eu aceito os termos e condições
+                    </label>
+                    {errors.acceptTerms && <p className="text-sm text-destructive mt-1">{errors.acceptTerms}</p>}
+                  </div>
+
+                  {errors._general && <p className="text-sm text-destructive text-center">{errors._general}</p>}
 
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Criando conta..." : "Criar Conta"}

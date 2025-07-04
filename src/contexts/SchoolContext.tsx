@@ -9,6 +9,14 @@ interface School {
   owner_id: string
   created_at: string
   updated_at: string
+  cnpj?: string
+  telefone?: string
+  cep?: string
+  logradouro?: string
+  numero?: string
+  bairro?: string
+  cidade?: string
+  estado?: string
 }
 
 interface SchoolContextType {
@@ -16,6 +24,7 @@ interface SchoolContextType {
   schoolId: string | null
   loading: boolean
   refreshSchool: () => Promise<void>
+  updateSchool: (schoolId: string, data: Partial<School>) => Promise<boolean>
 }
 
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined)
@@ -111,11 +120,38 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, session])
 
+  const updateSchool = async (schoolId: string, data: Partial<School>): Promise<boolean> => {
+    try {
+      console.log('🔄 SchoolContext: Atualizando dados da escola:', schoolId, data)
+      
+      const { error } = await supabase
+        .from('schools')
+        .update(data)
+        .eq('id', schoolId)
+      
+      if (error) {
+        console.error('❌ SchoolContext: Erro ao atualizar escola:', error)
+        return false
+      }
+      
+      console.log('✅ SchoolContext: Escola atualizada com sucesso')
+      
+      // Recarrega os dados da escola
+      await refreshSchool()
+      
+      return true
+    } catch (error) {
+      console.error('❌ SchoolContext: Erro inesperado ao atualizar escola:', error)
+      return false
+    }
+  }
+
   const value = {
     school,
     schoolId,
     loading,
-    refreshSchool
+    refreshSchool,
+    updateSchool
   }
 
   return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>

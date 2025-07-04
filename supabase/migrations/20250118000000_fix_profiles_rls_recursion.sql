@@ -10,8 +10,8 @@ DROP POLICY IF EXISTS profiles_delete_admins ON public.profiles;
 DROP POLICY IF EXISTS profiles_select_others ON public.profiles;
 DROP POLICY IF EXISTS profiles_update_own ON public.profiles;
 
--- PASSO 1.1: Remover política de INSERT da tabela 'schools' que impede cadastro de novas escolas
--- A criação de escolas deve ser feita APENAS através do trigger handle_new_user (SECURITY DEFINER)
+-- PASSO 1.1: Remover políticas de INSERT da tabela 'schools' que podem impedir o cadastro.
+-- A criação de escolas deve ser feita APENAS através do gatilho handle_new_user (que é SECURITY DEFINER).
 DROP POLICY IF EXISTS "Users can create schools for themselves" ON public.schools;
 DROP POLICY IF EXISTS "Admins and directors can insert new schools" ON public.schools;
 DROP POLICY IF EXISTS schools_insert_owner ON public.schools;
@@ -57,7 +57,7 @@ WITH CHECK (
   )
 );
 
--- POLÍTICA 4: APENAS diretores e administradores podem DELETAR perfis (exceto o seu próprio, que é coberto pela regra de owner da tabela 'schools').
+-- POLÍTICA 4: APENAS diretores e administradores podem DELETAR perfis (exceto o seu próprio).
 CREATE POLICY "Admins and directors can delete profiles"
 ON public.profiles FOR DELETE
 USING (
@@ -78,39 +78,3 @@ USING (
     WHERE p.id = auth.uid() AND p.school_id = profiles.school_id AND p.tipo_usuario IN ('admin', 'diretor')
   )
 );
-
--- =================================================================
--- COMENTÁRIOS EXPLICATIVOS:
--- =================================================================
--- 
--- PROBLEMA 1 - RECURSÃO RLS:
--- A causa do erro "stack depth limit exceeded" era a recursão nas políticas RLS.
--- 
--- PROBLEMA ANTERIOR:
--- 1. As funções get_my_school_id() e get_my_role() faziam SELECT na tabela profiles
--- 2. As políticas da tabela profiles usavam essas funções
--- 3. Isso criava um loop infinito: política -> função -> SELECT profiles -> política -> função...
--- 
--- SOLUÇÃO IMPLEMENTADA:
--- 1. Removemos todas as políticas antigas que usavam as funções problemáticas
--- 2. Criamos novas políticas usando EXISTS com subconsultas diretas
--- 3. As subconsultas não criam recursão porque são executadas de forma isolada
--- 
--- PROBLEMA 2 - CADASTRO DE NOVAS ESCOLAS:
--- As políticas de INSERT na tabela schools impediam o cadastro de novas escolas
--- porque não existe usuário autenticado durante o processo de registro.
--- 
--- FLUXO CORRETO DE CADASTRO:
--- 1. Usuário anônimo preenche formulário (nome escola, diretor, email, senha)
--- 2. Frontend chama supabase.auth.signUp() com dados no options.data
--- 3. Trigger handle_new_user (SECURITY DEFINER) é executado automaticamente
--- 4. Trigger cria escola E perfil do diretor com privilégios de admin
--- 5. Usuário recebe email de confirmação
--- 6. Após confirmar email, usuário pode fazer login normalmente
--- 
--- IMPORTANTE:
--- - Tabela schools NÃO tem política de INSERT (criação via trigger apenas)
--- - Tabela profiles tem política de INSERT mas não afeta o cadastro inicial
--- - As funções get_my_school_id() e get_my_role() continuam úteis para outras tabelas
--- - A lógica de segurança permanece a mesma: isolamento por escola e controle de papéis
--- =================================================================
