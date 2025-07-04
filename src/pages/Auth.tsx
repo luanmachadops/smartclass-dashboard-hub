@@ -50,6 +50,20 @@ export default function Auth() {
     e.preventDefault();
     setErrors({});
 
+    // PASSO 1: Log de depuração para ver o que o formulário está enviando
+    console.log('DADOS RECEBIDOS DO FORMULÁRIO:', registerData);
+
+    // Verificação explícita no frontend para garantir que os dados não estão vazios
+    if (!registerData.schoolName || !registerData.directorName) {
+      console.error('ERRO: Nome da escola ou do diretor está faltando ANTES de enviar para o Supabase.');
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validationResult = validateData(registerSchema, registerData, 'registerForm');
 
     if (!validationResult.success) {
@@ -69,31 +83,37 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // Agora nós esperamos a promessa aqui e desestruturamos o resultado.
-      const { data, error } = await signUp({
+      // Log dos dados que serão enviados para o Supabase
+      const signUpData = {
         email: validationResult.data.email,
         password: validationResult.data.password,
         nome_completo: validationResult.data.directorName,
         nome_escola: validationResult.data.schoolName,
-      });
+      };
+      
+      console.log('DADOS ENVIADOS PARA O SUPABASE:', signUpData);
 
-      // O tratamento de erro agora é feito aqui, no local da chamada.
+      // Aqui chamamos a função signUp do nosso contexto
+      const { data, error } = await signUp(signUpData);
+
       if (error) {
+        // Se o backend retornar um erro (como o que vimos), ele será capturado aqui.
+        console.error('ERRO RETORNADO DO SUPABASE:', error.message);
         toast({
           title: "Erro no registro",
           description: error.message,
           variant: "destructive",
         });
-        throw error; // Lança o erro para o bloco catch
+        throw error;
       }
       
-      console.log('Usuário registrado com sucesso, aguardando confirmação:', data);
-
-      // Navega para a página de confirmação (ou dashboard se a confirmação estiver desativada)
+      console.log("Registro no Supabase bem-sucedido:", data);
+      
+      // Mude para '/dashboard' se você desabilitou a confirmação de e-mail para desenvolver
       navigate('/confirm-email');
 
     } catch (error: any) {
-      console.error("Erro no registro:", error.message);
+      console.error("ERRO FINAL CAPTURADO NO REGISTRO:", error.message);
       // O toast já foi exibido no if (error)
     } finally {
       setLoading(false);
