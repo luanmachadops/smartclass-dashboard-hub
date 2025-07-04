@@ -53,7 +53,6 @@ export default function Auth() {
     const validationResult = validateData(registerSchema, registerData, 'registerForm');
 
     if (!validationResult.success) {
-      // Converter array de erros em objeto para exibição
       const errorObj: Record<string, string> = {};
       validationResult.errors.forEach(error => {
         const [field, message] = error.split(': ');
@@ -69,20 +68,35 @@ export default function Auth() {
 
     setLoading(true);
 
-    const result = await signUp(validationResult.data);
+    try {
+      // Agora nós esperamos a promessa aqui e desestruturamos o resultado.
+      const { data, error } = await signUp({
+        email: validationResult.data.email,
+        password: validationResult.data.password,
+        nome_completo: validationResult.data.directorName,
+        nome_escola: validationResult.data.schoolName,
+      });
 
-    setLoading(false);
+      // O tratamento de erro agora é feito aqui, no local da chamada.
+      if (error) {
+        toast({
+          title: "Erro no registro",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error; // Lança o erro para o bloco catch
+      }
+      
+      console.log('Usuário registrado com sucesso, aguardando confirmação:', data);
 
-    if (result.error) {
-      setErrors({ _general: result.error.message });
-      return;
-    }
+      // Navega para a página de confirmação (ou dashboard se a confirmação estiver desativada)
+      navigate('/confirm-email');
 
-    if (result.needsEmailConfirmation) {
-      navigate(`/email-confirmation?email=${encodeURIComponent(registerData.email)}`);
-    } else {
-      // Após confirmação de e-mail, redirecionar para completar dados da escola
-      navigate('/school-settings');
+    } catch (error: any) {
+      console.error("Erro no registro:", error.message);
+      // O toast já foi exibido no if (error)
+    } finally {
+      setLoading(false);
     }
   };
 

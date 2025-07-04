@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { authLogger } from '../services/logger';
+// import { authLogger } from '../services/logger'; // Removido para simplificar logs
 
 // Tipos de usuário permitidos
 export const USER_TYPES = ['diretor', 'professor', 'aluno'] as const;
@@ -154,7 +154,7 @@ export function validateData<T>(
     const result = schema.parse(data);
     
     if (context) {
-      authLogger.trace('Validação bem-sucedida', {
+      console.log('✅ Validação bem-sucedida', {
         action: 'validation',
         context,
         dataKeys: Object.keys(data as Record<string, any>)
@@ -170,7 +170,7 @@ export function validateData<T>(
       });
       
       if (context) {
-        authLogger.warn('Falha na validação', {
+        console.warn('⚠️ Falha na validação', {
           action: 'validation',
           context,
           errors,
@@ -182,10 +182,10 @@ export function validateData<T>(
     }
     
     if (context) {
-      authLogger.error('Erro inesperado na validação', {
+      console.error('❌ Erro inesperado na validação', {
         action: 'validation',
         context
-      }, error as Error);
+      });
     }
     
     return { success: false, errors: ['Erro de validação inesperado'] };
@@ -216,17 +216,17 @@ export async function validateDataAsync<T>(
           customErrors.push(error);
         }
       } catch (err) {
-        authLogger.error('Erro em validação customizada', {
+        console.error('❌ Erro em validação customizada', {
           action: 'customValidation',
           context
-        }, err as Error);
+        });
         customErrors.push('Erro na validação customizada');
       }
     }
     
     if (customErrors.length > 0) {
       if (context) {
-        authLogger.warn('Falha em validações customizadas', {
+        console.warn('⚠️ Falha em validações customizadas', {
           action: 'customValidation',
           context,
           errors: customErrors
