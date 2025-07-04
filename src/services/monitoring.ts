@@ -170,9 +170,7 @@ class MonitoringService {
 
   private setupSentry() {
     if (!config.monitoring.sentryDsn) {
-      authLogger.debug('Sentry DSN não configurado, pulando inicialização', {
-        action: 'setupSentry'
-      })
+      authLogger.debug('Sentry DSN não configurado, pulando inicialização')
       return
     }
 
@@ -273,25 +271,18 @@ class MonitoringService {
   }) {
     const eventData = {
       ...event,
-      timestamp: event.timestamp || Date.now(),
-      sessionId: this.sessionId,
-      userId: this.getCurrentUserId()
+      timestamp: event.timestamp || Date.now()
     }
-
-    authLogger.trace('Evento customizado registrado', {
-      action: 'recordEvent',
-      eventName: event.name,
-      properties: event.properties
+    
+    authLogger.debug('Evento registrado', eventData)
+    
+    // Registrar como ação do usuário para manter compatibilidade
+    this.recordUserAction({
+      action: event.name,
+      component: 'system',
+      timestamp: eventData.timestamp,
+      metadata: event.properties
     })
-
-    // Opcionalmente, pode ser mapeado para uma ação de usuário se fizer sentido
-    this.recordUserAction(
-      `event:${event.name}`,
-      'system',
-      {
-        metadata: event.properties
-      }
-    )
   }
 
   // Métodos auxiliares para controle de memória

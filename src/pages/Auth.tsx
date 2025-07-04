@@ -53,7 +53,17 @@ export default function Auth() {
     const validationResult = validateData(registerSchema, registerData, 'registerForm');
 
     if (!validationResult.success) {
-      setErrors(validationResult.errors);
+      // Converter array de erros em objeto para exibição
+      const errorObj: Record<string, string> = {};
+      validationResult.errors.forEach(error => {
+        const [field, message] = error.split(': ');
+        if (message) {
+          errorObj[field] = message;
+        } else {
+          errorObj._general = error;
+        }
+      });
+      setErrors(errorObj);
       return;
     }
 

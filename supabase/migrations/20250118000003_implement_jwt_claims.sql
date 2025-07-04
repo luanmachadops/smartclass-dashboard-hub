@@ -74,12 +74,15 @@ CREATE POLICY "Users can update own profile (JWT)"
 ON public.profiles FOR UPDATE
 USING (id = auth.uid());
 
--- NOVA POLÍTICA 3: Inserção de perfis por admins/diretores
+-- NOVA POLÍTICA 3: Inserção de perfis por admins/diretores e durante registro
 CREATE POLICY "Admins can insert profiles (JWT)"
 ON public.profiles FOR INSERT
 WITH CHECK (
-  public.get_jwt_user_type() IN ('admin', 'diretor')
-  AND school_id = public.get_jwt_school_id()
+  -- Permite inserção durante registro (quando não há JWT claims ainda)
+  (public.get_jwt_user_type() IS NULL AND id = auth.uid())
+  OR
+  -- Permite inserção por admins/diretores
+  (public.get_jwt_user_type() IN ('admin', 'diretor') AND school_id = public.get_jwt_school_id())
 );
 
 -- NOVA POLÍTICA 4: Deleção de perfis por admins/diretores

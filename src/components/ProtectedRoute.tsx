@@ -2,7 +2,6 @@
 import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserProfile } from '@/contexts/UserProfileContext'
-import { useFirstTimeSetup } from '@/hooks/useFirstTimeSetup'
 import { Navigate } from 'react-router-dom'
 
 interface ProtectedRouteProps {
@@ -13,9 +12,8 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth()
   const { profile, loading: profileLoading } = useUserProfile()
-  const { isChecking: setupChecking } = useFirstTimeSetup()
 
-  const loading = authLoading || profileLoading || setupChecking
+  const loading = authLoading || profileLoading
 
   if (loading) {
     return (

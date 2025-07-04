@@ -5,14 +5,44 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { authLogger } from '../services/logger'
-import { ErrorHandler, retryWithBackoff, AuthenticationError } from '../services/errorHandler';
-import { useRealTimeValidation } from '../hooks/useRealTimeValidation';
-import { userCache } from '../services/cache';
-import { rateLimiter, RateLimitType } from '../services/rateLimiter';
-import { auditService } from '../services/auditService';
 import { validateData, registerSchema, loginSchema, inviteUserSchema, type RegisterData, type LoginData, type InviteUserData } from '@/schemas/validation';
 
+// Rate limiting para prevenir ataques de força bruta
+class RateLimiter {
+  private attempts = new Map<string, number[]>();
+  private readonly maxAttempts = 5;
+  private readonly windowMs = 5 * 60 * 1000; // 5 minutos
 
+  checkRateLimit(identifier: string): boolean {
+    const now = Date.now();
+    const userAttempts = this.attempts.get(identifier) || [];
+    
+    // Remove tentativas antigas
+    const recentAttempts = userAttempts.filter(time => now - time < this.windowMs);
+    
+    if (recentAttempts.length >= this.maxAttempts) {
+      return false; // Rate limit excedido
+    }
+    
+    // Adiciona nova tentativa
+    recentAttempts.push(now);
+    this.attempts.set(identifier, recentAttempts);
+    
+    return true; // Permitido
+  }
+
+  getRemainingTime(identifier: string): number {
+    const attempts = this.attempts.get(identifier) || [];
+    if (attempts.length === 0) return 0;
+    
+    const oldestAttempt = Math.min(...attempts);
+    const timeRemaining = this.windowMs - (Date.now() - oldestAttempt);
+    
+    return Math.max(0, Math.ceil(timeRemaining / 1000 / 60)); // em minutos
+  }
+}
+
+const rateLimiter = new RateLimiter();
 
 // Mova esta função para fora do componente para que não dependa de `this`
 const getAuthErrorMessage = (error: any): string => {
@@ -49,9 +79,6 @@ interface AuthContextType {
   signIn: (data: LoginData) => Promise<{ success: boolean; error?: any }>;
   signOut: () => Promise<{ success: boolean; error?: any }>;
   inviteUser: (data: InviteUserData) => Promise<{ success: boolean; error?: any }>;
-  refreshSession: () => Promise<void>;
-  validateEmail: (email: string) => boolean;
-  validatePassword: (password: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,10 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [rateLimitAttempts, setRateLimitAttempts] = useState(0);
-  const [lastAttemptTime, setLastAttemptTime] = useState(0);
-  
-  const errorHandler = ErrorHandler.getInstance();
 
   // Método para retry automático de operações críticas
   const retryOperation = async <T>(
@@ -162,89 +185,111 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (data: RegisterData) => {
     try {
       // Verificar rate limiting
-      const rateLimitResult = rateLimiter.checkSignup(data.email);
-      if (!rateLimitResult.allowed) {
-        const config = rateLimiter.getConfig(RateLimitType.SIGNUP);
-        const message = config?.message || 'Muitas tentativas de cadastro. Tente novamente mais tarde.';
+      if (!rateLimiter.checkRateLimit(data.email)) {
+        const remainingTime = rateLimiter.getRemainingTime(data.email);
         authLogger.warn(`Rate limit excedido para registro: ${data.email}`);
-        toast.error(message);
+        toast.error(`Muitas tentativas de cadastro. Tente novamente em ${remainingTime} minutos.`);
         return { success: false, error: { message: 'Rate limit excedido' } };
       }
-
-      const validation = validateData(registerSchema, data, 'registerForm');
+      
+      const validation = validateData(registerSchema, data);
       if (!validation.success) {
-        const errorMessages = Object.values(validation.errors).join(', ');
-        authLogger.warn('Dados de registro inválidos', { component: 'Auth', errors: validation.errors });
-        toast.error(`Dados inválidos: ${errorMessages}`);
-        return { success: false, error: { message: 'Dados de registro inválidos', details: validation.errors } };
+        const errorMessage = validation.errors.join(', ');
+        authLogger.warn('Dados de registro inválidos', { errors: validation.errors });
+        toast.error(`Dados inválidos: ${errorMessage}`);
+        return { success: false, error: { message: errorMessage } };
       }
 
-      const { email, password, directorName, schoolName, phone } = validation.data;
-
-      const { data: signUpData, error } = await supabase.auth.signUp({
+      const { email, password, directorName, schoolName } = validation.data;
+      
+      const timer = authLogger.time('user-registration', {
+        action: 'signUp',
+        email
+      });
+      
+      authLogger.info('Iniciando processo de registro', {
+        action: 'signUp',
+        email,
+        directorName,
+        schoolName
+      });
+      
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             nome_completo: directorName,
             nome_escola: schoolName,
-            telefone: phone,
-            tipo_usuario: 'diretor',
-            school_id: null // Adicionar campo school_id para evitar erro, ajustar conforme necessário
-          },
-        },
+            tipo_usuario: 'diretor'
+          }
+        }
       });
 
-      if (error) {
-        const errorMessage = getAuthErrorMessage(error);
-        authLogger.error('Erro ao criar usuário', { 
-          action: 'signUp', 
-          email: data.email, 
-          errorCode: error.status, 
-          errorMessage: error.message 
-        }, error);
-        toast.error(errorMessage);
-        return { success: false, error };
+      if (signUpError) {
+        timer();
+        authLogger.error('Erro ao criar usuário', {
+          action: 'signUp',
+          email,
+          errorCode: signUpError.status,
+          errorMessage: signUpError.message
+        }, signUpError);
+        
+        const userFriendlyMessage = getAuthErrorMessage(signUpError);
+        toast.error(userFriendlyMessage);
+        return { success: false, error: signUpError };
       }
-
-      const needsEmailConfirmation = !!signUpData.user && !signUpData.user.email_confirmed_at;
-
-      if (needsEmailConfirmation) {
-        toast.success('Cadastro realizado! Verifique seu e-mail para confirmar a conta.');
-      } else {
-        toast.success('Cadastro realizado com sucesso!');
-      }
-
-      authLogger.info('Usuário cadastrado com sucesso', { 
-        action: 'signUp', 
-        email: data.email, 
-        userId: signUpData.user?.id, 
-        needsConfirmation: needsEmailConfirmation 
+      
+      timer();
+      authLogger.info('Usuário criado com sucesso', {
+        action: 'signUp',
+        email: authData?.user?.email,
+        userId: authData?.user?.id,
+        needsConfirmation: !authData?.session
       });
 
-      return { success: true, needsEmailConfirmation };
-    } catch (err) {
-      const errorMessage = getAuthErrorMessage(err);
-      authLogger.error('Erro inesperado no processo de signUp', { 
-        action: 'signUp', 
-        email: data.email, 
-        error: err instanceof Error ? err.message : String(err) 
-      }, err as Error);
-      toast.error(errorMessage);
-      return { success: false, error: err };
+      if (!authData?.session) {
+        toast.info('Verifique seu email para confirmar a conta');
+        return { success: true, needsEmailConfirmation: true };
+      }
+
+      authLogger.info('Fazendo login automático após registro', {
+        action: 'autoLogin',
+        email
+      });
+      
+      const loginResult = await retryOperation(
+        () => signIn({ email, password }),
+        'autoLogin',
+        { email }
+      );
+      
+      if (loginResult.success) {
+        authLogger.info('Registro e login completados com sucesso', {
+          action: 'signUp',
+          email
+        });
+        toast.success('Conta criada com sucesso!');
+      }
+      
+      return loginResult;
+    } catch (error) {
+      authLogger.error('Erro inesperado no processo de registro', {
+        action: 'signUp',
+        email: data.email
+      }, error as Error);
+      toast.error('Erro inesperado no registro');
+      return { success: false, error };
     }
   };
 
   const signIn = async (data: LoginData) => {
     try {
       // Verificar rate limiting
-      const rateLimitResult = rateLimiter.checkLogin(data.email);
-      if (!rateLimitResult.allowed) {
-        const config = rateLimiter.getConfig(RateLimitType.LOGIN);
-        const message = config?.message || 'Muitas tentativas de login. Tente novamente mais tarde.';
+      if (!rateLimiter.checkRateLimit(data.email)) {
+        const remainingTime = rateLimiter.getRemainingTime(data.email);
         authLogger.warn(`Rate limit excedido para ${data.email}`);
-        await auditService.logLogin(false, undefined, message);
-        toast.error(message);
+        toast.error(`Muitas tentativas de login. Tente novamente em ${remainingTime} minutos.`);
         return { success: false, error: { message: 'Rate limit excedido' } };
       }
       
@@ -269,34 +314,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email
       })
       
-      const signInOperation = async () => {
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        timer();
+        authLogger.warn('Falha no login', {
+          action: 'signIn',
           email,
-          password
+          errorCode: error.status,
+          errorMessage: error.message
         });
-
-        if (error) {
-          authLogger.warn('Falha no login', {
-            action: 'signIn',
-            email,
-            errorCode: error.status,
-            errorMessage: error.message
-          });
-          
-          await auditService.logLogin(false, undefined, error.message);
-          throw new AuthenticationError(error.message);
-        }
-
-        return authData;
-      };
-
-      const authData = await retryWithBackoff(signInOperation, 2, 1000);
-      
-      // Reset rate limit após login bem-sucedido
-      rateLimiter.resetLimit(RateLimitType.LOGIN, data.email);
-      
-      // Log de auditoria
-      await auditService.logLogin(true, authData.user?.id);
+        
+        const userFriendlyMessage = getAuthErrorMessage(error);
+        toast.error(userFriendlyMessage);
+        return { success: false, error };
+      }
       
       timer();
       authLogger.info('Login realizado com sucesso', {
@@ -305,14 +340,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userId: authData.user?.id
       });
       
-      // Cache dos dados do usuário
-      if (authData.user) {
-        userCache.set(`user_${authData.user.id}`, authData.user, 15 * 60 * 1000);
-      }
-      if (authData.session) {
-        userCache.set(`session_${authData.user?.id}`, authData.session, 15 * 60 * 1000);
-      }
-      
       toast.success('Login realizado com sucesso!');
       return { success: true };
     } catch (error) {
@@ -320,37 +347,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         action: 'signIn',
         email: data.email
       }, error as Error);
-      await auditService.logLogin(false, undefined, (error as Error).message);
-      errorHandler.handleError(error, 'Erro inesperado no login');
+      toast.error('Erro inesperado no login');
       return { success: false, error };
     }
   };
 
   const signOut = async () => {
+    // ... (código do signOut)
     try {
       authLogger.info('Iniciando logout', { userId: user?.id })
       
-      const signOutOperation = async () => {
-        const { error } = await supabase.auth.signOut();
-
-        if (error) {
-          authLogger.error('Erro no logout', {
-            userId: user?.id,
-            error: error.message
-          }, error);
-          throw new AuthenticationError(error.message);
-        }
-      };
-
-      await retryWithBackoff(signOutOperation, 2, 500);
+      const { error } = await supabase.auth.signOut()
       
-      // Limpar cache do usuário
-      if (user) {
-        userCache.delete(`user_${user.id}`);
-        userCache.delete(`session_${user.id}`);
+      if (error) {
+        authLogger.error('Erro no logout', {
+          userId: user?.id,
+          error: error.message
+        }, error)
+        toast.error('Erro ao fazer logout')
+        return { success: false, error }
       }
-      
-
       
       authLogger.info('Logout realizado com sucesso', { userId: user?.id })
       toast.success('Logout realizado com sucesso!')
@@ -359,12 +375,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authLogger.error('Erro inesperado no logout', {
         userId: user?.id
       }, error as Error)
-      errorHandler.handleError(error, 'Erro inesperado no logout')
+      toast.error('Erro inesperado no logout')
       return { success: false, error }
     }
   };
 
   const inviteUser = async (data: InviteUserData) => {
+    // ... (código do inviteUser)
     try {
       // Validar dados de entrada
       const validation = validateData(inviteUserSchema, data)
@@ -385,33 +402,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         invitedBy: user?.id
       })
       
-      const inviteOperation = async () => {
-        // Nota: Esta função precisa ser implementada como uma Edge Function do Supabase
-        // pois requer privilégios de admin para convidar usuários
-        const { data: responseData, error } = await supabase.functions.invoke('invite-user', {
-          body: {
-            email,
-            nome_completo: nomeCompleto,
-            tipo_usuario: tipoUsuario,
-            school_id: schoolId
-          }
-        });
-
-        if (error) {
-          authLogger.error('Erro ao convidar usuário', {
-            email,
-            tipoUsuario,
-            schoolId,
-            error: error.message,
-            invitedBy: user?.id
-          }, error);
-          throw new AuthenticationError(error.message);
+      // Nota: Esta função precisa ser implementada como uma Edge Function do Supabase
+      // pois requer privilégios de admin para convidar usuários
+      const { data: responseData, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email,
+          nome_completo: nomeCompleto,
+          tipo_usuario: tipoUsuario,
+          school_id: schoolId
         }
+      })
 
-        return responseData;
-      };
-
-      await retryWithBackoff(inviteOperation, 3, 1000);
+      if (error) {
+        authLogger.error('Erro ao convidar usuário', {
+          email,
+          tipoUsuario,
+          schoolId,
+          error: error.message,
+          invitedBy: user?.id
+        }, error)
+        toast.error('Erro ao enviar convite: ' + error.message)
+        return { success: false, error }
+      }
 
       authLogger.info('Convite enviado com sucesso', {
         email,
@@ -426,49 +438,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         invitedBy: user?.id
       }, error as Error)
-      errorHandler.handleError(error, 'Erro inesperado ao enviar convite')
+      toast.error('Erro inesperado ao enviar convite')
       return { success: false, error }
     }
-  };
-
-  const refreshSession = async () => {
-    try {
-      authLogger.info('Atualizando sessão');
-      
-      const refreshOperation = async () => {
-        const { data, error } = await supabase.auth.refreshSession();
-        
-        if (error) {
-          authLogger.error('Erro ao atualizar sessão', { error: error.message });
-          throw new AuthenticationError(error.message);
-        }
-        
-        return data;
-      };
-      
-      const data = await retryWithBackoff(refreshOperation, 2, 1000);
-      
-      if (data.session && data.user) {
-        // Atualizar cache
-        userCache.set(`user_${data.user.id}`, data.user, 15 * 60 * 1000);
-        userCache.set(`session_${data.user.id}`, data.session, 15 * 60 * 1000);
-      }
-      
-      authLogger.info('Sessão atualizada com sucesso');
-    } catch (error: any) {
-      authLogger.error('Falha ao atualizar sessão', {}, error);
-      errorHandler.handleError(error, 'Erro ao atualizar sessão');
-      throw error;
-    }
-  };
-  
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-  
-  const validatePassword = (password: string): boolean => {
-    return password.length >= 6;
   };
 
   const value = {
@@ -478,10 +450,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     signOut,
-    inviteUser,
-    refreshSession,
-    validateEmail,
-    validatePassword
+    inviteUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

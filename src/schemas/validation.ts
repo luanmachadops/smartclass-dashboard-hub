@@ -54,19 +54,19 @@ export const nameSchema = nameValidation;
 
 // Schema para registro de usuário
 export const registerSchema = z.object({
-  email: emailValidation.describe('Endereço de e-mail para login e comunicação.'),
-  password: passwordValidation.describe('A senha deve ser forte e segura.'),
-  confirmPassword: z.string().describe('Confirmação da senha para evitar erros de digitação.'),
-  directorName: nameValidation.describe('Nome completo do responsável pela escola.'),
-  schoolName: schoolNameValidation.describe('Nome oficial da escola de música.'),
-  phone: phoneValidation.optional().describe('Telefone para contato (opcional).'),
-  acceptTerms: z.literal(true, {
-    errorMap: () => ({ message: 'Você deve aceitar os termos e condições para continuar.' }),
-  }).describe('Confirmação de aceite dos termos de uso.'),
+  email: emailValidation,
+  password: passwordValidation,
+  confirmPassword: z.string(),
+  directorName: nameValidation,
+  schoolName: schoolNameValidation,
+  phone: phoneValidation.optional(),
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: 'Você deve aceitar os termos de uso'
+  })
 }).refine(data => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem.',
-  path: ['confirmPassword'],
-});
+  message: 'As senhas não coincidem',
+  path: ['confirmPassword']
+})
 
 // Schema para login
 export const loginSchema = z.object({
@@ -149,7 +149,7 @@ export function validateData<T>(
   schema: z.ZodSchema<T>,
   data: unknown,
   context?: string
-): { success: true; data: T } | { success: false; errors: Record<string, string> } {
+): { success: true; data: T } | { success: false; errors: string[] } {
   try {
     const result = schema.parse(data);
     
@@ -164,14 +164,10 @@ export function validateData<T>(
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.flatten().fieldErrors;
-      const formattedErrors: Record<string, string> = {};
-      for (const key in errors) {
-        if (errors[key]) {
-          formattedErrors[key] = errors[key]!.join(', ');
-        }
-      }
-
+      const errors = error.errors.map(err => {
+        const path = err.path.join('.');
+        return path ? `${path}: ${err.message}` : err.message;
+      });
       
       if (context) {
         authLogger.warn('Falha na validação', {
@@ -182,7 +178,7 @@ export function validateData<T>(
         });
       }
       
-      return { success: false, errors: formattedErrors };
+      return { success: false, errors };
     }
     
     if (context) {
@@ -192,7 +188,7 @@ export function validateData<T>(
       }, error as Error);
     }
     
-    return { success: false, errors: { _general: 'Erro de validação inesperado' } };
+    return { success: false, errors: ['Erro de validação inesperado'] };
   }
 }
 
